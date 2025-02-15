@@ -8,7 +8,7 @@ export class Gnosis {
   private memory: Memory;
 
   constructor(ai: Ai, vectorIndex: VectorizeIndex) {
-    this.llm = new LLM(ai, "gpt-4o");
+    this.llm = new LLM(ai, "@cf/meta/llama-3.1-8b-instruct");
     this.memory = new Memory(ai, vectorIndex);
   }
 
