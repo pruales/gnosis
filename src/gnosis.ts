@@ -1,57 +1,45 @@
-import { LLM } from "./util/ai/llm";
+import { ModelFactory, ModelId } from "./util/ai/llm";
 import Memory, { MemoryMetadata } from "./util/ai/memory";
-import { FACT_EXTRACTION_PROMPT, memoryUpdatePrompt } from "./util/ai/prompts";
+import {
+  FACT_EXTRACTION_PROMPT,
+  generateMemoryUpdateMessages,
+} from "./util/ai/prompts";
 import { z } from "zod";
+import { CoreMessage, generateObject } from "ai";
 
 export class Gnosis {
-  private llm: LLM;
+  private modelFactory: ModelFactory;
   private memory: Memory;
+  private static readonly DEFAULT_MAX_TOKENS = 1000;
+  private static readonly DEFAULT_TEMPERATURE = 0.1;
 
-  constructor(ai: Ai, vectorIndex: VectorizeIndex) {
-    this.llm = new LLM(ai, "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b");
+  constructor(ai: Ai, vectorIndex: VectorizeIndex, openaiApiKey: string) {
+    this.modelFactory = new ModelFactory(ai, openaiApiKey);
     this.memory = new Memory(ai, vectorIndex);
   }
 
-  private parseMessages(
-    messages: Array<{ role: string; content: string }>
-  ): string {
-    return messages
-      .map((msg) => {
-        switch (msg.role) {
-          case "system":
-            return `system: ${msg.content}`;
-          case "user":
-            return `user: ${msg.content}`;
-          case "assistant":
-            return `assistant: ${msg.content}`;
-          default:
-            return "";
-        }
-      })
-      .filter(Boolean)
-      .join("\n");
-  }
-
-  async add(
-    userId: string,
-    messages: Array<{ role: string; content: string }>,
-    namespace: string
-  ) {
+  async add(userId: string, messages: CoreMessage[], namespace: string) {
     // 1. Extract facts using LLM with properly formatted messages
-    const facts = await this.llm.generateStructuredOutput(
-      this.parseMessages(messages),
-      z.object({
-        facts: z.array(z.string()),
+    const factsResponse = await generateObject({
+      model: this.modelFactory.getModel(),
+      messages: [...FACT_EXTRACTION_PROMPT, ...messages],
+      schema: z.object({
+        facts: z.array(
+          z.object({
+            fact: z.string(),
+            categories: z.array(z.string()),
+          })
+        ),
       }),
-      1000,
-      0.1,
-      FACT_EXTRACTION_PROMPT
-    );
+      maxTokens: Gnosis.DEFAULT_MAX_TOKENS,
+      temperature: Gnosis.DEFAULT_TEMPERATURE,
+    });
+    const facts = factsResponse.object;
 
     // 2. Get similar existing memories - use formatted messages for similarity search
     const similarMemories = await this.memory.query(
-      this.parseMessages(messages),
-      5,
+      messages.map((m) => `${m.role}: ${m.content}`).join("\n"),
+      10,
       namespace,
       { userId }
     );
@@ -72,9 +60,10 @@ export class Gnosis {
     const oldMemoryJson = JSON.stringify(oldMemories);
     const newFactsJson = JSON.stringify({ facts: facts.facts });
 
-    const memoryUpdates = await this.llm.generateStructuredOutput(
-      memoryUpdatePrompt(oldMemoryJson, newFactsJson),
-      z.object({
+    const memoryUpdatesResponse = await generateObject({
+      model: this.modelFactory.getModel("gpt-4o"),
+      messages: generateMemoryUpdateMessages(oldMemoryJson, newFactsJson),
+      schema: z.object({
         memory: z.array(
           z.object({
             id: z.string(),
@@ -84,8 +73,10 @@ export class Gnosis {
           })
         ),
       }),
-      1000
-    );
+      maxTokens: Gnosis.DEFAULT_MAX_TOKENS,
+      temperature: Gnosis.DEFAULT_TEMPERATURE,
+    });
+    const memoryUpdates = memoryUpdatesResponse.object;
 
     // 4. Process memory updates - map back to real UUIDs
     const updates = [];
@@ -166,7 +157,6 @@ export class Gnosis {
       id: m.id,
       text: (m.metadata as MemoryMetadata).memoryText,
       metadata: m.metadata,
-      namespace: m.namespace,
     }));
   }
 
@@ -185,7 +175,6 @@ export class Gnosis {
       id: m.id,
       text: (m.metadata as MemoryMetadata).memoryText,
       metadata: m.metadata,
-      namespace: m.namespace,
       score: m.score,
     }));
   }
@@ -195,7 +184,6 @@ export class Gnosis {
     if (!memory) {
       throw new Error(`Memory ${memoryId} not found`);
     }
-
     if (!memory.namespace) {
       throw new Error(`Memory ${memoryId} has no namespace`);
     }

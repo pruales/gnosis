@@ -7,6 +7,7 @@ import { zValidator } from "@hono/zod-validator";
 export type Bindings = {
   AI: Ai;
   VECTORIZE: VectorizeIndex;
+  OPENAI_API_KEY: string;
 };
 
 type Variables = {
@@ -18,7 +19,7 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // Initialize Gnosis for each request
 app.use("*", async (c, next) => {
-  const gnosis = new Gnosis(c.env.AI, c.env.VECTORIZE);
+  const gnosis = new Gnosis(c.env.AI, c.env.VECTORIZE, c.env.OPENAI_API_KEY);
   c.set("gnosis", gnosis);
   await next();
 });
@@ -31,18 +32,20 @@ const addMemorySchema = z.object({
       content: z.string(),
     })
   ),
-  userId: z.string(),
-  namespace: z.string(),
+  userId: z.string().uuid(),
+  namespace: z.string().uuid(),
 });
 
 const updateMemorySchema = z.object({
   text: z.string(),
+  userId: z.string().uuid(),
+  namespace: z.string().uuid(),
 });
 
 const searchSchema = z.object({
   query: z.string(),
-  userId: z.string(),
-  namespace: z.string(),
+  userId: z.string().uuid(),
+  namespace: z.string().uuid(),
   limit: z.number().optional().default(100),
 });
 
@@ -69,7 +72,8 @@ app.get("/v1/memories/:id", async (c) => {
     if (!memory) {
       return c.json({ error: "Memory not found" }, 404);
     }
-    return c.json(memory);
+    const { namespace, ...rest } = memory;
+    return c.json(rest);
   } catch (err) {
     const error = err as Error;
     return c.json({ error: error.message }, 500);

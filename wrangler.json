@@ -11,7 +11,7 @@
   ],
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
-    "MY_VAR": "my-variable"
+    "OPENAI_API_KEY": "ensure-this-is-set"
   },
   "ai": {
     "binding": "AI"

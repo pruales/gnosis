@@ -6,6 +6,7 @@
     "deploy": "wrangler deploy --minify"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^1.1.11",
     "@hono/zod-validator": "^0.4.2",
     "ai": "^4.1.40",
     "hono": "^4.7.1",
