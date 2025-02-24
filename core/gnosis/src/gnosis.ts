@@ -12,17 +12,22 @@ export class Gnosis {
   private memory: Memory;
   private static readonly DEFAULT_MAX_TOKENS = 1000;
   private static readonly DEFAULT_TEMPERATURE = 0.1;
+  private factExtractionPrompt: CoreMessage[] = FACT_EXTRACTION_PROMPT;
 
   constructor(ai: Ai, vectorIndex: VectorizeIndex, openaiApiKey: string) {
     this.modelFactory = new ModelFactory(ai, openaiApiKey);
     this.memory = new Memory(ai, vectorIndex);
   }
 
+  setFactExtractionPrompt(prompt: CoreMessage[]) {
+    this.factExtractionPrompt = prompt;
+  }
+
   async add(userId: string, messages: CoreMessage[], namespace: string) {
     // 1. Extract facts using LLM with properly formatted messages
     const factsResponse = await generateObject({
       model: this.modelFactory.getModel(),
-      messages: [...FACT_EXTRACTION_PROMPT, ...messages],
+      messages: [...this.factExtractionPrompt, ...messages],
       schema: z.object({
         facts: z.array(
           z.object({
@@ -149,17 +154,6 @@ export class Gnosis {
     };
   }
 
-  async getAll(userId: string, namespace: string, limit: number = 100) {
-    const results = await this.memory.query("", limit, namespace, { userId });
-    if (!results?.matches) return [];
-
-    return results.matches.map((m) => ({
-      id: m.id,
-      text: (m.metadata as MemoryMetadata).memoryText,
-      metadata: m.metadata,
-    }));
-  }
-
   async search(
     query: string,
     userId: string,
@@ -206,12 +200,5 @@ export class Gnosis {
   async delete(memoryId: string) {
     await this.memory.delete([memoryId]);
     return { message: `Memory ${memoryId} deleted successfully` };
-  }
-
-  async deleteAll(userId: string, namespace: string) {
-    const memories = await this.getAll(userId, namespace);
-    const ids = memories.map((m) => m.id);
-    await this.memory.delete(ids);
-    return { message: `Deleted ${ids.length} memories` };
   }
 }

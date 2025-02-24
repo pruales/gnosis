@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gnosis",
+  "main": "src/index.ts",
+  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2025-02-14",
+  "vectorize": [
+    {
+      "binding": "VECTORIZE",
+      "index_name": "memory-index"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gnosis-db",
+      "database_id": "f861a677-0316-4bbc-bbe1-b25d9997c2de",
+      "migrations_dir": "../../packages/db/migrations"
+    }
+  ],
+  "vars": {
+    "OPENAI_API_KEY": "ensure-this-is-set",
+    "ADMIN_API_KEY": "ensure-this-is-set",
+    "CLERK_SECRET_KEY": "ensure-this-is-set"
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

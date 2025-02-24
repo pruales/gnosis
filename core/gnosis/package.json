@@ -1,0 +1,29 @@
+{
+  "name": "gnosis",
+  "packageManager": "bun@1.2.2",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.1.11",
+    "@clerk/backend": "^1.24.2",
+    "@hono/zod-validator": "^0.4.2",
+    "@paralleldrive/cuid2": "^2.2.2",
+    "ai": "^4.1.40",
+    "better-sqlite3": "^11.8.1",
+    "db": "workspace:*",
+    "drizzle-orm": "^0.39.3",
+    "hono": "^4.7.1",
+    "workers-ai-provider": "^0.0.11",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.7.1",
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "drizzle-kit": "^0.30.4",
+    "vitest": "2.1.8",
+    "wrangler": "^3.101.0"
+  }
+}

@@ -1,20 +1,13 @@
 {
   "name": "gnosis",
-  "packageManager": "bun@1.2.2",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "core/*",
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy --minify"
-  },
-  "dependencies": {
-    "@ai-sdk/openai": "^1.1.11",
-    "@hono/zod-validator": "^0.4.2",
-    "ai": "^4.1.40",
-    "hono": "^4.7.1",
-    "workers-ai-provider": "^0.0.11",
-    "zod": "^3.24.2"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250109.0",
-    "wrangler": "^3.101.0"
+    "db:generate": "bun --filter=db generate"
   }
 }
