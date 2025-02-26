@@ -8,6 +8,7 @@ export type Bindings = {
   ADMIN_API_KEY: string;
   DB: D1Database;
   CLERK_SECRET_KEY: string;
+  CLERK_PUBLISHABLE_KEY: string;
 };
 
 export type Variables = {

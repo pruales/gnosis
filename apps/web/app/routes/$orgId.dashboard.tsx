@@ -77,7 +77,7 @@ export default function OrganizationDashboardLayout() {
     <div className="min-h-screen bg-background transition-opacity duration-200 animate-in fade-in">
       <SyncActiveOrganization />
       <header className="border-b border-border">
-        <div className="container flex h-16 items-center justify-between px-4">
+        <div className="container flex h-16 items-center justify-between px-4 max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <Link
               to={`/${orgId}/dashboard`}
@@ -102,7 +102,7 @@ export default function OrganizationDashboardLayout() {
           </div>
         </div>
       </header>
-      <main className="container py-6 px-4 transition-opacity duration-300 animate-in fade-in">
+      <main className="container py-6 px-4 max-w-7xl mx-auto transition-opacity duration-300 animate-in fade-in">
         <Outlet />
       </main>
     </div>

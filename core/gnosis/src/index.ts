@@ -25,8 +25,9 @@ app.get("/ping", (c) => {
   return c.json({ status: "ok" });
 });
 
-// Initialize Gnosis with company context
+// Skip auth for specific endpoints
 app.use("*", async (c, next) => {
+  // Skip authentication for ping endpoint
   if (c.req.path === "/ping") {
     return next();
   }
@@ -36,8 +37,19 @@ app.use("*", async (c, next) => {
     return next();
   }
 
-  // Use the combined authentication middleware that supports both Clerk JWT and API keys
-  await authMiddleware(c, next);
+  // Use authentication middleware for everything else
+  return authMiddleware(c, next);
+});
+
+// Initialize Gnosis with company context (after authentication)
+app.use("*", async (c, next) => {
+  // Skip Gnosis setup for paths that don't need it
+  if (
+    c.req.path === "/ping" ||
+    (c.req.path.startsWith("/api/companies") && c.req.method === "POST")
+  ) {
+    return next();
+  }
 
   const db = c.get("db");
   const promptService = new PromptService(db);

@@ -18,6 +18,17 @@ npm run build
 npm run start
 ```
 
+## Environment Configuration
+
+The application uses environment variables for configuration. Create a `.env.local` file in the `apps/web` directory with the following variables:
+
+```sh
+# API configuration
+API_BASE_URL=http://localhost:8787  # URL for the Gnosis API
+```
+
+The default API URL points to a local development server. In production, set this to your deployed API endpoint.
+
 ## Typegen
 
 Generate types for your Cloudflare bindings in `wrangler.toml`:

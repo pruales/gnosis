@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
-import { CompanyService } from "../services/company";
 import { ApiKeyService } from "../services/api-key";
 import { adminAuth, companyAuth } from "../middleware/auth";
 import { schema } from "db";
@@ -10,29 +9,19 @@ import type { Variables, Bindings } from "../types";
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-const createCompanySchema = z.object({
-  name: z.string().min(1),
-});
-
-app.post("/", adminAuth, zValidator("json", createCompanySchema), async (c) => {
-  const db = c.get("db");
-  const companyService = new CompanyService(db);
-  const apiKeyService = new ApiKeyService(db);
-
-  const { name } = c.req.valid("json");
-
-  const company = await companyService.create(name);
-  const apiKey = await apiKeyService.create(company.id);
-
-  return c.json({ id: company.id, name, apiKey }, 201);
-});
-
-// Create new API key (admin only)
-app.post("/:id/api-keys", adminAuth, async (c) => {
+// Create new API key using authenticated company ID
+app.post("/api-keys", async (c) => {
   const db = c.get("db");
   const apiKeyService = new ApiKeyService(db);
-  const companyId = c.req.param("id");
 
+  // Get the companyId from context (set by authentication middleware)
+  const companyId = c.get("companyId");
+
+  if (!companyId) {
+    return c.json({ error: "Not authenticated or company ID not found" }, 401);
+  }
+
+  console.log(`Creating API key for company: ${companyId}`);
   const apiKey = await apiKeyService.create(companyId);
   return c.json({ apiKey }, 201);
 });
@@ -84,9 +73,15 @@ app.get("/api-keys", async (c) => {
       revoked: schema.apiKeys.revoked,
     })
     .from(schema.apiKeys)
-    .where(eq(schema.apiKeys.companyId, companyId));
+    .where(
+      and(
+        eq(schema.apiKeys.companyId, companyId),
+        eq(schema.apiKeys.revoked, false)
+      )
+    );
 
-  return c.json(keys);
+  // Return the keys wrapped in an object with a keys property to match API client expectations
+  return c.json({ keys });
 });
 
 app.delete("/api-keys/:keyId", async (c) => {

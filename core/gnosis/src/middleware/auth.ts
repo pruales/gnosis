@@ -10,7 +10,7 @@ export const adminAuth: MiddlewareHandler = async (c, next) => {
     return c.json({ error: "Invalid admin credentials" }, 401);
   }
 
-  await next();
+  return next();
 };
 
 export const companyAuth: MiddlewareHandler = async (c, next) => {
@@ -30,7 +30,7 @@ export const companyAuth: MiddlewareHandler = async (c, next) => {
   }
 
   c.set("companyId", key.companyId);
-  await next();
+  return next();
 };
 
 // Middleware for Clerk JWT authentication
@@ -39,6 +39,7 @@ export const clerkAuth: MiddlewareHandler = async (c, next) => {
     // Initialize Clerk client with environment variables
     const clerkClient = createClerkClient({
       secretKey: c.env.CLERK_SECRET_KEY,
+      publishableKey: c.env.CLERK_PUBLISHABLE_KEY,
     });
 
     // Create a Request object from Hono's request
@@ -63,21 +64,32 @@ export const clerkAuth: MiddlewareHandler = async (c, next) => {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
-    // Get the session claims which contain the user ID
+    // Get the session claims which contain the user ID and organization ID
     const session = auth.toAuth();
     if (!session || !session.userId) {
       return c.json({ error: "Invalid session" }, 401);
     }
 
-    // In a real implementation, you would look up the company ID associated with this user
-    // For now, we'll use a mock implementation
     const userId = session.userId;
-    const companyId = `company_for_user_${userId}`;
 
-    c.set("companyId", companyId);
+    // Extract organization ID from session claims if available
+    // The org_id claim is included in the session token when the user is part of an organization
+    const orgId = session.orgId;
+
+    if (!orgId) {
+      return c.json(
+        { error: "No organization associated with this user" },
+        403
+      );
+    }
+
+    console.log(`Authenticated user ${userId} for organization ${orgId}`);
+
+    // Use the organization ID as the company ID
+    c.set("companyId", orgId);
     c.set("userId", userId);
 
-    await next();
+    return next();
   } catch (error) {
     console.error("Clerk authentication error:", error);
     return c.json({ error: "Authentication failed" }, 401);
@@ -117,6 +129,6 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
     c.set("companyId", key.companyId);
     c.set("userId", null); // No Clerk user ID
 
-    await next();
+    return next();
   }
 };

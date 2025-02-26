@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { DB, schema } from "db";
 import { CoreMessage } from "ai";
+import { FACT_EXTRACTION_PROMPT } from "../util/ai/prompts";
 
 export class PromptService {
   constructor(private readonly db: DB) {}
@@ -8,34 +9,51 @@ export class PromptService {
   async setFactExtraction(companyId: string, content: CoreMessage[]) {
     const promptContent = JSON.stringify(content);
 
-    await this.db
-      .insert(schema.prompts)
-      .values({
-        companyId,
-        promptContent,
-      })
-      .onConflictDoUpdate({
-        target: [schema.prompts.companyId],
-        set: {
+    // Instead of checking for company existence, we'll use a try-catch to handle any potential errors
+    try {
+      await this.db
+        .insert(schema.prompts)
+        .values({
+          companyId,
           promptContent,
-          updatedAt: new Date().toISOString(),
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: [schema.prompts.companyId],
+          set: {
+            promptContent,
+            updatedAt: new Date().toISOString(),
+          },
+        });
+    } catch (error) {
+      console.error("Error setting fact extraction prompt:", error);
+      throw error;
+    }
   }
 
   async getFactExtraction(companyId: string): Promise<CoreMessage[] | null> {
-    const result = await this.db
-      .select()
-      .from(schema.prompts)
-      .where(eq(schema.prompts.companyId, companyId))
-      .get();
-
-    if (!result?.promptContent) return null;
-
     try {
+      const result = await this.db
+        .select()
+        .from(schema.prompts)
+        .where(eq(schema.prompts.companyId, companyId))
+        .get();
+
+      if (!result?.promptContent) {
+        const defaultPrompt = FACT_EXTRACTION_PROMPT;
+        // Try to save the default prompt, but don't fail if it can't be saved
+        try {
+          await this.setFactExtraction(companyId, defaultPrompt);
+        } catch (error) {
+          console.error("Failed to save default prompt:", error);
+          // Continue and return the default prompt even if saving failed
+        }
+        return defaultPrompt;
+      }
+
       return JSON.parse(result.promptContent);
-    } catch {
-      return null;
+    } catch (error) {
+      console.error("Error retrieving fact extraction prompt:", error);
+      return FACT_EXTRACTION_PROMPT;
     }
   }
 }
