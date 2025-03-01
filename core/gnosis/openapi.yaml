@@ -1,0 +1,364 @@
+openapi: 3.0.3
+info:
+  title: Gnosis API
+  version: "1.0.0"
+  description: >
+    This API powers the Gnosis application.
+    It provides endpoints for:
+      - Company management (creation and API key management)
+      - Updating fact extraction prompts for companies
+      - Memory ingestion and retrieval
+      - Health checks
+servers:
+  - url: http://localhost:8787/api
+    description: Local development server
+paths:
+  # Company endpoints
+  /v1/companies:
+    post:
+      summary: Create a new company
+      description: >
+        Creates a new company and returns the new company's ID along with an API key.
+        This endpoint requires an admin API key as a Bearer token.
+      tags:
+        - Companies
+      security:
+        - adminBearerAuth: []
+      requestBody:
+        description: Company creation payload.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCompany"
+      responses:
+        "201":
+          description: Company created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyResponse"
+        "400":
+          description: Invalid request or missing required fields.
+  /v1/companies/{id}/api-keys:
+    post:
+      summary: Create a new API key for a company
+      description: >
+        Generates a new API key for the specified company.
+        This endpoint is admin only.
+      tags:
+        - Companies
+      security:
+        - adminBearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Company ID.
+          schema:
+            type: string
+      responses:
+        "201":
+          description: API key created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyResponse"
+        "404":
+          description: Company not found.
+    delete:
+      summary: Revoke all API keys for a company
+      description: >
+        Revokes all active API keys for the specified company.
+        This endpoint is admin only.
+      tags:
+        - Companies
+      security:
+        - adminBearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Company ID.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: API keys revoked successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevokeApiKeysResponse"
+        "404":
+          description: Company not found.
+  /v1/companies/api-keys:
+    get:
+      summary: List API keys for the current company
+      description: >
+        Retrieves all API keys for the authenticated company.
+      tags:
+        - Companies
+      security:
+        - companyBearerAuth: []
+      responses:
+        "200":
+          description: List of API keys.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKey"
+        "500":
+          description: Company ID not found.
+  /v1/companies/api-keys/{keyId}:
+    delete:
+      summary: Revoke a specific API key
+      description: >
+        Revokes the specified API key if it belongs to the authenticated company.
+      tags:
+        - Companies
+      security:
+        - companyBearerAuth: []
+      parameters:
+        - in: path
+          name: keyId
+          required: true
+          description: API key identifier.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: API key revoked successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: API key revoked successfully
+        "404":
+          description: API key not found.
+
+  # Prompt endpoints
+  /v1/companies/{id}/prompt:
+    post:
+      summary: Update fact extraction prompt for a company
+      description: >
+        Updates the fact extraction prompt for a given company.
+        This endpoint requires company authentication.
+      tags:
+        - Prompts
+      security:
+        - companyBearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Company ID.
+          schema:
+            type: string
+      requestBody:
+        description: New fact extraction prompt content.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetPromptRequest"
+      responses:
+        "200":
+          description: Fact extraction prompt updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fact extraction prompt updated successfully
+        "400":
+          description: Invalid request.
+
+  # Memory endpoints
+  /v1/memories:
+    post:
+      summary: Add a new memory
+      description: >
+        Adds a new memory with the supplied messages, user ID, and namespace.
+        This endpoint requires company authentication.
+      tags:
+        - Memories
+      security:
+        - companyBearerAuth: []
+      requestBody:
+        description: Memory payload.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMemoryRequest"
+      responses:
+        "200":
+          description: Memory processed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+        "500":
+          description: Error processing memory.
+  /v1/memories/{id}:
+    get:
+      summary: Retrieve a memory by ID
+      description: >
+        Retrieves a memory's details using its unique identifier.
+        This endpoint requires company authentication.
+      tags:
+        - Memories
+      security:
+        - companyBearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Memory ID.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Memory details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Memory"
+        "404":
+          description: Memory not found.
+        "500":
+          description: Server error.
+
+  # Health check endpoint
+  /v1/ping:
+    get:
+      summary: Health check endpoint
+      description: Returns the API health status.
+      tags:
+        - Health
+      responses:
+        "200":
+          description: API health status.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+components:
+  securitySchemes:
+    adminBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API_KEY
+      description: >
+        Provide the admin API key as a bearer token for admin endpoints.
+    companyBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API_KEY
+      description: >
+        Provide the company API key as a bearer token for company endpoints.
+  schemas:
+    CreateCompany:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+      required:
+        - name
+    CompanyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        apiKey:
+          type: string
+    ApiKeyResponse:
+      type: object
+      properties:
+        apiKey:
+          type: string
+    RevokeApiKeysResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        revokedCount:
+          type: integer
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+        revoked:
+          type: boolean
+    SetPromptRequest:
+      type: object
+      properties:
+        promptContent:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+      required:
+        - promptContent
+    AddMemoryRequest:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        userId:
+          type: string
+        namespace:
+          type: string
+      required:
+        - messages
+        - userId
+        - namespace
+    Message:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - system
+            - user
+            - assistant
+        content:
+          type: string
+      required:
+        - role
+        - content
+    Memory:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        metadata:
+          type: object
+        namespace:
+          type: string
+      required:
+        - id
+        - text
+        - metadata
+        - namespace
