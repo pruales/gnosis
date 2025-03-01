@@ -1,13 +1,14 @@
 import { MiddlewareHandler } from "hono";
 import { ApiKeyService } from "../services/api-key";
 import { createClerkClient } from "@clerk/backend";
+import { errorResponse } from "../utils/response";
 
 export const adminAuth: MiddlewareHandler = async (c, next) => {
   const authHeader = c.req.header("Authorization");
-  const apiKey = ApiKeyService.extractBearerToken(authHeader);
+  const apiKey = extractBearerToken(authHeader);
 
   if (!apiKey || apiKey !== c.env.ADMIN_API_KEY) {
-    return c.json({ error: "Invalid admin credentials" }, 401);
+    return errorResponse(c, "Invalid admin credentials", 401);
   }
 
   return next();
@@ -18,15 +19,15 @@ export const companyAuth: MiddlewareHandler = async (c, next) => {
   const apiKeyService = new ApiKeyService(db);
 
   const authHeader = c.req.header("Authorization");
-  const apiKey = ApiKeyService.extractBearerToken(authHeader);
+  const apiKey = extractBearerToken(authHeader);
 
   if (!apiKey) {
-    return c.json({ error: "Bearer token required" }, 401);
+    return errorResponse(c, "Bearer token required", 401);
   }
 
   const key = await apiKeyService.verify(apiKey);
   if (!key) {
-    return c.json({ error: "Invalid or revoked API key" }, 401);
+    return errorResponse(c, "Invalid or revoked API key", 401);
   }
 
   c.set("companyId", key.companyId);
@@ -61,38 +62,34 @@ export const clerkAuth: MiddlewareHandler = async (c, next) => {
     const auth = await clerkClient.authenticateRequest(request);
 
     if (!auth.isSignedIn) {
-      return c.json({ error: "Unauthorized" }, 401);
+      return errorResponse(c, "Unauthorized", 401);
     }
 
     // Get the session claims which contain the user ID and organization ID
     const session = auth.toAuth();
     if (!session || !session.userId) {
-      return c.json({ error: "Invalid session" }, 401);
+      return errorResponse(c, "Invalid session", 401);
     }
-
-    const userId = session.userId;
 
     // Extract organization ID from session claims if available
     // The org_id claim is included in the session token when the user is part of an organization
     const orgId = session.orgId;
 
     if (!orgId) {
-      return c.json(
-        { error: "No organization associated with this user" },
-        403
-      );
+      return errorResponse(c, "No organization associated with this user", 403);
     }
 
-    console.log(`Authenticated user ${userId} for organization ${orgId}`);
+    console.log(
+      `Authenticated user ${session.userId} for organization ${orgId}`
+    );
 
     // Use the organization ID as the company ID
     c.set("companyId", orgId);
-    c.set("userId", userId);
 
     return next();
   } catch (error) {
     console.error("Clerk authentication error:", error);
-    return c.json({ error: "Authentication failed" }, 401);
+    return errorResponse(c, "Authentication failed", 401);
   }
 };
 
@@ -101,34 +98,36 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
   const authHeader = c.req.header("Authorization");
 
   if (!authHeader) {
-    return c.json({ error: "Authentication required" }, 401);
+    return errorResponse(c, "Authentication required", 401);
   }
 
-  const token = ApiKeyService.extractBearerToken(authHeader);
+  const token = extractBearerToken(authHeader);
   if (!token) {
-    return c.json({ error: "Bearer token required" }, 401);
+    return errorResponse(c, "Bearer token required", 401);
   }
 
-  // Try to determine if this is a Clerk JWT or an API key
-  // Clerk JWTs are typically longer and contain two dots (header.payload.signature)
-  const isJwt = token.includes(".") && token.split(".").length === 3;
+  // Check if this is an API key by looking for the 'sk-' prefix
+  const isApiKey = token.startsWith("sk-");
 
-  if (isJwt) {
-    // Handle as Clerk JWT
-    return clerkAuth(c, next);
-  } else {
+  if (isApiKey) {
     // Handle as API key
     const db = c.get("db");
     const apiKeyService = new ApiKeyService(db);
 
     const key = await apiKeyService.verify(token);
     if (!key) {
-      return c.json({ error: "Invalid or revoked API key" }, 401);
+      return errorResponse(c, "Invalid or revoked API key", 401);
     }
 
     c.set("companyId", key.companyId);
-    c.set("userId", null); // No Clerk user ID
 
     return next();
+  } else {
+    // Handle as Clerk JWT
+    return clerkAuth(c, next);
   }
 };
+
+function extractBearerToken(authHeader?: string): string | null {
+  return authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+}

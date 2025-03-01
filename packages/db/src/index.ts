@@ -1,8 +1,8 @@
-import { drizzle } from "drizzle-orm/d1";
+import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "./schema";
 
-export function createDb(d1: D1Database) {
-  return drizzle(d1, { schema });
+export function createDb(url: string) {
+  return drizzle(url, { schema });
 }
 
 export type DB = ReturnType<typeof createDb>;

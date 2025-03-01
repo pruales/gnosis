@@ -1,0 +1,38 @@
+name: gnosis-timescaledb
+services:
+  timescaledb:
+    image: timescale/timescaledb-ha:pg17
+    container_name: gnosis-timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=gnosis_db
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-init:
+    image: postgres:17
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=gnosis_db
+      - PGHOST=timescaledb
+    command: >
+      bash -c "
+        echo 'Creating vectorscale extension if it does not exist...' &&
+        psql -c 'CREATE EXTENSION IF NOT EXISTS vectorscale CASCADE;' &&
+        echo 'Extension setup complete!'
+      "
+
+volumes:
+  timescaledb_data:

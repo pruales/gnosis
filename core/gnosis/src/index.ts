@@ -1,76 +1,60 @@
 import { Hono } from "hono";
 import { createDb } from "db";
-import router from "./routes";
-import { authMiddleware } from "./middleware/auth";
-import { PromptService } from "./services/prompt";
-import { Gnosis } from "./gnosis";
 import { Bindings, Variables } from "./types";
+import authRoutes from "./routes";
+import adminRoutes from "./routes/admin";
+import { successResponse, errorResponse } from "./utils/response";
 
 const app = new Hono<{
   Bindings: Bindings;
-  Variables: Variables & {
-    userId?: string;
-  };
+  Variables: Variables;
 }>();
 
-// Set up database connection
+/**
+ * Database initialization middleware
+ * Sets up the database connection for all routes
+ */
 app.use("*", async (c, next) => {
-  const db = createDb(c.env.DB);
+  const db = createDb(c.env.HYPERDRIVE.connectionString);
   c.set("db", db);
   await next();
 });
 
-// Add a simple ping endpoint for health checks
+// =========================================
+// Public routes - no auth required
+// =========================================
+
+/**
+ * Health check endpoint
+ * Route: GET /ping
+ */
 app.get("/ping", (c) => {
-  return c.json({ status: "ok" });
+  return successResponse(c, { status: "ok" });
 });
 
-// Skip auth for specific endpoints
-app.use("*", async (c, next) => {
-  // Skip authentication for ping endpoint
-  if (c.req.path === "/ping") {
-    return next();
-  }
-
-  // Skip auth for company creation
-  if (c.req.path.startsWith("/api/companies") && c.req.method === "POST") {
-    return next();
-  }
-
-  // Use authentication middleware for everything else
-  return authMiddleware(c, next);
+app.onError((err, c) => {
+  console.error(err);
+  return errorResponse(c, "Internal Server Error", 500);
 });
 
-// Initialize Gnosis with company context (after authentication)
-app.use("*", async (c, next) => {
-  // Skip Gnosis setup for paths that don't need it
-  if (
-    c.req.path === "/ping" ||
-    (c.req.path.startsWith("/api/companies") && c.req.method === "POST")
-  ) {
-    return next();
-  }
+// =========================================
+// API routes - auth handled at router level
+// =========================================
 
-  const db = c.get("db");
-  const promptService = new PromptService(db);
-  const companyId = c.get("companyId");
+/**
+ * Mount authenticated API routes
+ * Base Path: /api/v1
+ * Routes defined in routes/index.ts following the pattern:
+ * /api/v1/[resource]
+ */
+app.route("/api/v1", authRoutes);
 
-  if (!companyId) {
-    return c.json({ error: "Company ID not found" }, 500);
-  }
-
-  const gnosis = new Gnosis(c.env.AI, c.env.VECTORIZE, c.env.OPENAI_API_KEY);
-
-  // Set custom prompt if available
-  const customPrompt = await promptService.getFactExtraction(companyId);
-  if (customPrompt) {
-    gnosis.setFactExtractionPrompt(customPrompt);
-  }
-
-  c.set("gnosis", gnosis);
-  await next();
-});
-
-app.route("/api", router);
+/**
+ * Mount admin-only API routes
+ * Base Path: /api/v1/admin
+ * Routes defined in routes/admin.ts following the pattern:
+ * /api/v1/admin/[resource]
+ */
+app.route("/api/v1/admin", adminRoutes);
 
 export default app;

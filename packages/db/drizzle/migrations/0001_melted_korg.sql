@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX `prompts_company_id_unique` ON `prompts` (`company_id`);

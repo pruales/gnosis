@@ -24,7 +24,7 @@ export class ApiKeyService {
 
   async verify(apiKey: string) {
     const hashedKey = await this.hashKey(apiKey);
-    const result = await this.db
+    const [key] = await this.db
       .select()
       .from(schema.apiKeys)
       .where(
@@ -33,8 +33,8 @@ export class ApiKeyService {
           eq(schema.apiKeys.revoked, false)
         )
       )
-      .get();
-    return result;
+      .limit(1);
+    return key;
   }
 
   async revoke(id: string) {
@@ -50,9 +50,5 @@ export class ApiKeyService {
     const hashBuffer = await crypto.subtle.digest("SHA-256", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-  }
-
-  static extractBearerToken(authHeader?: string): string | null {
-    return authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
   }
 }

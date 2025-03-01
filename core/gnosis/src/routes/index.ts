@@ -1,22 +1,76 @@
 import { Hono } from "hono";
 import type { Variables, Bindings } from "../types";
-import companiesRouter from "./companies";
+import apiKeyRoutes from "./api-keys";
 import memoriesRouter from "./memories";
 import promptsRouter from "./prompts";
-import healthRouter from "./health";
+import { authMiddleware } from "../middleware/auth";
+import { PromptService } from "../services/prompt";
+import { Gnosis } from "../gnosis";
+import Memory from "../util/ai/memory";
+import { errorResponse } from "../utils/response";
 
-const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+// =========================================
+// Authenticated API Routes
+// =========================================
 
-// Mount all routes under /v1
-app.route("/v1/companies", companiesRouter);
-app.route("/v1/memories", memoriesRouter);
-app.route("/v1/companies/:id/prompt", promptsRouter);
-app.route("/v1/ping", healthRouter);
+const authRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// Add a catch-all for 404 errors
-app.notFound((c) => {
-  console.log(`404 Not Found: ${c.req.method} ${c.req.path}`);
-  return c.json({ error: "Route not found" }, 404);
+/**
+ * Authentication middleware
+ */
+authRoutes.use("*", authMiddleware);
+
+/**
+ * Gnosis initialization middleware
+ * NOTE: guarantees that companyId is set for all routes in this router
+ */
+authRoutes.use("*", async (c, next) => {
+  const db = c.get("db");
+  const promptService = new PromptService(db);
+
+  console.log(c.req.path);
+  console.log(c.req.param());
+
+  const companyId = c.get("companyId");
+
+  if (!companyId) {
+    return errorResponse(c, "Company ID not found", 400);
+  }
+
+  const memory = new Memory(c.env.AI, db);
+  c.set("memory", memory);
+
+  const gnosis = new Gnosis(
+    c.env.AI,
+    c.env.OPENAI_API_KEY,
+    promptService,
+    memory
+  );
+
+  c.set("gnosis", gnosis);
+  await next();
 });
 
-export default app;
+// =========================================
+// API Route Mounting
+// =========================================
+
+/**
+ * Mount api key routes
+ * Base Path: /api/v1/api_keys
+ */
+authRoutes.route("/api_keys", apiKeyRoutes);
+
+/**
+ * Mount memories routes
+ * Base Path: /api/v1/memories
+ */
+authRoutes.route("/memories", memoriesRouter);
+
+/**
+ * Mount prompts routes
+ * Base Path: /api/v1/prompts
+ */
+authRoutes.route("/prompts", promptsRouter);
+
+export default authRoutes;

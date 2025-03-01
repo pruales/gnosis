@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { DB, schema } from "db";
 import { CoreMessage } from "ai";
 import { FACT_EXTRACTION_PROMPT } from "../util/ai/prompts";
@@ -21,7 +21,7 @@ export class PromptService {
           target: [schema.prompts.companyId],
           set: {
             promptContent,
-            updatedAt: new Date().toISOString(),
+            updatedAt: sql`now()`,
           },
         });
     } catch (error) {
@@ -32,13 +32,13 @@ export class PromptService {
 
   async getFactExtraction(companyId: string): Promise<CoreMessage[] | null> {
     try {
-      const result = await this.db
+      const [prompt] = await this.db
         .select()
         .from(schema.prompts)
         .where(eq(schema.prompts.companyId, companyId))
-        .get();
+        .limit(1);
 
-      if (!result?.promptContent) {
+      if (!prompt?.promptContent) {
         const defaultPrompt = FACT_EXTRACTION_PROMPT;
         // Try to save the default prompt, but don't fail if it can't be saved
         try {
@@ -50,10 +50,15 @@ export class PromptService {
         return defaultPrompt;
       }
 
-      return JSON.parse(result.promptContent);
+      return JSON.parse(prompt.promptContent);
     } catch (error) {
       console.error("Error retrieving fact extraction prompt:", error);
       return FACT_EXTRACTION_PROMPT;
     }
+  }
+
+  async resetFactExtraction(companyId: string) {
+    const defaultPrompt = FACT_EXTRACTION_PROMPT;
+    await this.setFactExtraction(companyId, defaultPrompt);
   }
 }

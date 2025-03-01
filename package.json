@@ -8,6 +8,7 @@
     "apps/*"
   ],
   "scripts": {
-    "db:generate": "bun --filter=db generate"
-  }
+    "db:generate": "pnpm --filter=db generate"
+  },
+  "packageManager": "pnpm@9.15.4"
 }

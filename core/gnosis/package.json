@@ -2,7 +2,7 @@
   "name": "gnosis",
   "packageManager": "bun@1.2.2",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev  --port 8787 --ip 127.0.0.1",
     "deploy": "wrangler deploy --minify"
   },
   "dependencies": {

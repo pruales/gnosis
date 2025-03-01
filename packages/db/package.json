@@ -9,7 +9,9 @@
   },
   "scripts": {
     "generate": "drizzle-kit generate",
-    "up": "drizzle-kit up"
+    "up": "drizzle-kit up",
+    "migrate": "drizzle-kit migrate",
+    "studio": "drizzle-kit studio"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
@@ -20,7 +22,9 @@
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
+    "@types/pg": "^8.11.11",
     "better-sqlite3": "^11.8.1",
-    "drizzle-orm": "^0.39.3"
+    "drizzle-orm": "^0.39.3",
+    "pg": "^8.13.3"
   }
 }

@@ -1,11 +1,12 @@
 import { ModelFactory, ModelId } from "./util/ai/llm";
-import Memory, { MemoryMetadata } from "./util/ai/memory";
+import Memory, { MemoryMetadata, QueryOptions } from "./util/ai/memory";
 import {
   FACT_EXTRACTION_PROMPT,
   generateMemoryUpdateMessages,
 } from "./util/ai/prompts";
 import { z } from "zod";
 import { CoreMessage, generateObject } from "ai";
+import { PromptService } from "./services/prompt";
 
 export class Gnosis {
   private modelFactory: ModelFactory;
@@ -13,21 +14,35 @@ export class Gnosis {
   private static readonly DEFAULT_MAX_TOKENS = 1000;
   private static readonly DEFAULT_TEMPERATURE = 0.1;
   private factExtractionPrompt: CoreMessage[] = FACT_EXTRACTION_PROMPT;
+  private promptService: PromptService;
 
-  constructor(ai: Ai, vectorIndex: VectorizeIndex, openaiApiKey: string) {
+  constructor(
+    ai: Ai,
+    openaiApiKey: string,
+    promptService: PromptService,
+    memory: Memory
+  ) {
     this.modelFactory = new ModelFactory(ai, openaiApiKey);
-    this.memory = new Memory(ai, vectorIndex);
+    this.memory = memory;
+    this.promptService = promptService;
   }
 
-  setFactExtractionPrompt(prompt: CoreMessage[]) {
-    this.factExtractionPrompt = prompt;
-  }
+  async add(userId: string, messages: CoreMessage[], orgId: string) {
+    let factExtractionPrompt: CoreMessage[] = this.factExtractionPrompt;
 
-  async add(userId: string, messages: CoreMessage[], namespace: string) {
+    try {
+      const customPrompt = await this.promptService.getFactExtraction(orgId);
+      if (customPrompt) {
+        factExtractionPrompt = customPrompt;
+      }
+    } catch (error) {
+      console.error("Error fetching custom prompt:", error);
+    }
+
     // 1. Extract facts using LLM with properly formatted messages
     const factsResponse = await generateObject({
       model: this.modelFactory.getModel(),
-      messages: [...this.factExtractionPrompt, ...messages],
+      messages: [...factExtractionPrompt, ...messages],
       schema: z.object({
         facts: z.array(
           z.object({
@@ -42,11 +57,15 @@ export class Gnosis {
     const facts = factsResponse.object;
 
     // 2. Get similar existing memories - use formatted messages for similarity search
+    const queryOptions: QueryOptions = {
+      userId: userId,
+      orgId: orgId,
+    };
+
     const similarMemories = await this.memory.query(
       messages.map((m) => `${m.role}: ${m.content}`).join("\n"),
       10,
-      namespace,
-      { userId }
+      queryOptions
     );
 
     // 3. Generate memory update decisions
@@ -58,7 +77,7 @@ export class Gnosis {
         uuidMapping.set(indexStr, m.id);
         return {
           id: indexStr,
-          text: (m.metadata as MemoryMetadata).memoryText,
+          text: m.metadata.memoryText,
         };
       }) ?? [];
 
@@ -71,7 +90,7 @@ export class Gnosis {
       schema: z.object({
         memory: z.array(
           z.object({
-            id: z.string(),
+            id: z.string().optional(),
             text: z.string(),
             event: z.enum(["ADD", "UPDATE", "DELETE", "NONE"]),
             old_memory: z.string().optional(),
@@ -88,20 +107,24 @@ export class Gnosis {
     for (const update of memoryUpdates.memory) {
       switch (update.event) {
         case "ADD":
-          await this.memory.add([
+          const ids = await this.memory.add([
             {
               text: update.text,
               metadata: {
                 userId,
                 memoryText: update.text,
+                orgId: orgId,
               },
-              namespace,
             },
           ]);
-          updates.push({ type: "ADD", text: update.text });
+          updates.push({ type: "ADD", text: update.text, id: ids[0] });
           break;
 
         case "UPDATE":
+          if (!update.id) {
+            console.warn(`Invalid memory index ${update.id} for update`);
+            continue;
+          }
           const realUuid = uuidMapping.get(update.id);
           if (!realUuid) {
             console.warn(`Invalid memory index ${update.id} for update`);
@@ -114,8 +137,8 @@ export class Gnosis {
               metadata: {
                 userId,
                 memoryText: update.text,
+                orgId: orgId,
               },
-              namespace,
             },
           ]);
           updates.push({
@@ -127,6 +150,10 @@ export class Gnosis {
           break;
 
         case "DELETE":
+          if (!update.id) {
+            console.warn(`Invalid memory index ${update.id} for deletion`);
+            continue;
+          }
           const deleteUuid = uuidMapping.get(update.id);
           if (!deleteUuid) {
             console.warn(`Invalid memory index ${update.id} for deletion`);
@@ -148,26 +175,30 @@ export class Gnosis {
     const memory = results[0];
     return {
       id: memory.id,
-      text: (memory.metadata as MemoryMetadata).memoryText,
-      metadata: memory.metadata,
-      namespace: memory.namespace,
+      text: memory.memoryText,
+      userId: memory.userId,
+      orgId: memory.orgId,
+      agentId: memory.agentId,
     };
   }
 
   async search(
     query: string,
     userId: string,
-    namespace: string,
+    orgId: string,
     limit: number = 100
   ) {
-    const results = await this.memory.query(query, limit, namespace, {
-      userId,
-    });
+    const queryOptions: QueryOptions = {
+      userId: userId,
+      orgId: orgId,
+    };
+
+    const results = await this.memory.query(query, limit, queryOptions);
     if (!results?.matches) return [];
 
     return results.matches.map((m) => ({
       id: m.id,
-      text: (m.metadata as MemoryMetadata).memoryText,
+      text: m.metadata.memoryText,
       metadata: m.metadata,
       score: m.score,
     }));
@@ -178,19 +209,15 @@ export class Gnosis {
     if (!memory) {
       throw new Error(`Memory ${memoryId} not found`);
     }
-    if (!memory.namespace) {
-      throw new Error(`Memory ${memoryId} has no namespace`);
-    }
 
     await this.memory.add([
       {
         id: memoryId,
         text,
         metadata: {
-          userId: (memory.metadata as MemoryMetadata).userId,
+          userId: memory.userId,
           memoryText: text,
         },
-        namespace: memory.namespace,
       },
     ]);
 

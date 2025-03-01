@@ -1,0 +1,36 @@
+{
+  "name": "gnosis-client",
+  "version": "0.1.0",
+  "description": "API client for interacting with the Gnosis API",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "bun run clean && bun run build",
+    "test:api": "bun test/api-test.ts"
+  },
+  "keywords": [
+    "gnosis",
+    "api",
+    "client"
+  ],
+  "author": "",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "dotenv": "^16.4.7",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.3"
+  }
+}

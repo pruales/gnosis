@@ -4,23 +4,9 @@
   "entries": [
     {
       "idx": 0,
-      "version": "6",
-      "when": 1739994911077,
-      "tag": "0000_brief_tusk",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1740532606884,
-      "tag": "0001_melted_korg",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1740533061635,
-      "tag": "0002_warm_ted_forrester",
+      "version": "7",
+      "when": 1740616808696,
+      "tag": "0000_happy_meltdown",
       "breakpoints": true
     }
   ]
