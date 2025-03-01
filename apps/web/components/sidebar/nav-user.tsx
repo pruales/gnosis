@@ -54,9 +54,11 @@ export function NavUser() {
                   {user.lastName?.[0]}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{user.fullName}</span>
-                <span className="truncate text-xs">
+              <div className="grid flex-1 text-left leading-tight">
+                <span className="truncate text-sm font-semibold">
+                  {user.fullName}
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
                   {user.primaryEmailAddress?.emailAddress}
                 </span>
               </div>
@@ -70,7 +72,7 @@ export function NavUser() {
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+              <div className="flex items-center gap-2 px-1 py-1.5 text-left">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.imageUrl} alt={user.fullName || ""} />
                   <AvatarFallback className="rounded-lg">
@@ -78,9 +80,11 @@ export function NavUser() {
                     {user.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.fullName}</span>
-                  <span className="truncate text-xs">
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate text-sm font-medium">
+                    {user.fullName}
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
                     {user.primaryEmailAddress?.emailAddress}
                   </span>
                 </div>
@@ -88,28 +92,31 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="text-sm">
                 <Sparkles />
                 Upgrade to Pro
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => openUserProfile()}>
+              <DropdownMenuItem
+                className="text-sm"
+                onClick={() => openUserProfile()}
+              >
                 <BadgeCheck />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="text-sm">
                 <CreditCard />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="text-sm">
                 <Bell />
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>
+            <DropdownMenuItem className="text-sm" onClick={handleSignOut}>
               <LogOut className="mr-2" />
               Sign out
             </DropdownMenuItem>

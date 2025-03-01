@@ -29,9 +29,6 @@ export function OrgSwitcher() {
 
   React.useEffect(() => {
     const membershipResourceLoading = userMemberships.isLoading;
-
-    console.log("orgId", orgId);
-    console.log("userMemberships", userMemberships);
     if (
       !orgId &&
       isLoaded &&
@@ -82,7 +79,7 @@ export function OrgSwitcher() {
           appearance={{
             elements: {
               // Root container - match exact spacing of other sidebar items
-              rootBox: cn("!w-full", isCollapsed && "!p-0"),
+              rootBox: cn(isCollapsed && "!p-0"),
               // Trigger button styling to match sidebar icons exactly
               organizationSwitcherTrigger: cn(
                 "flex !items-center !gap-2 !rounded-lg !text-sm",

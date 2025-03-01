@@ -10,6 +10,8 @@ export type ApiKey = {
   id: string;
   createdAt: string;
   revoked: boolean;
+  name?: string;
+  creator?: string;
 };
 
 /**

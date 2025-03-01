@@ -14,6 +14,8 @@ export const apiKeys = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     companyId: text("company_id").notNull(),
     hashedKey: text("hashed_key").notNull().unique(),
+    name: text("name").default("API Key"),
+    creator: text("creator").notNull(),
     revoked: boolean("revoked").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

@@ -4,6 +4,8 @@ import { ApiKeyService } from "../services/api-key";
 import { schema } from "db";
 import type { Variables, Bindings } from "../types";
 import { successResponse, errorResponse } from "../utils/response";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
 
 const apiKeyRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -28,6 +30,8 @@ apiKeyRoutes.get("/", async (c) => {
       id: schema.apiKeys.id,
       createdAt: schema.apiKeys.createdAt,
       revoked: schema.apiKeys.revoked,
+      name: schema.apiKeys.name,
+      creator: schema.apiKeys.creator,
     })
     .from(schema.apiKeys)
     .where(
@@ -41,20 +45,49 @@ apiKeyRoutes.get("/", async (c) => {
   return successResponse(c, { keys });
 });
 
+// Validation schema for creating an API key
+const createApiKeySchema = z.object({
+  name: z.string().optional(),
+  creator: z.string().optional(),
+});
+
 /**
  * Create new API key for a company
  * Route: POST /api/v1/api_keys
  */
-apiKeyRoutes.post("/", async (c) => {
-  const db = c.get("db");
-  const apiKeyService = new ApiKeyService(db);
+apiKeyRoutes.post(
+  "/",
+  zValidator("json", createApiKeySchema, (result, c) => {
+    if (!result.success) {
+      return errorResponse(c, "Invalid request payload", 400);
+    }
+  }),
+  async (c) => {
+    const db = c.get("db");
+    const apiKeyService = new ApiKeyService(db);
+    const companyId = c.get("companyId") as string;
 
-  const companyId = c.get("companyId") as string;
+    // Extract name and creator from the request body
+    const payload = await c.req.json();
+    let { name, creator } = payload;
 
-  console.log(`Creating API key for company: ${companyId}`);
-  const apiKey = await apiKeyService.create(companyId);
-  return successResponse(c, { apiKey }, 201);
-});
+    // If creator wasn't provided in the payload, use the one from the context
+    if (!creator) {
+      creator = c.get("creator");
+
+      // If still no creator, return an error
+      if (!creator) {
+        return errorResponse(c, "Creator is required", 400);
+      }
+    }
+
+    console.log(
+      `Creating API key for company: ${companyId} by creator: ${creator}`
+    );
+    const apiKey = await apiKeyService.create(companyId, creator, name);
+    return successResponse(c, { apiKey }, 201);
+  }
+);
 
 /**
  * Revoke a specific API key for a company

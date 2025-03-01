@@ -17,4 +17,5 @@ export type Variables = {
   db: DB;
   memory: Memory;
   companyId?: string;
+  creator?: string;
 };

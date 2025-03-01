@@ -12,10 +12,8 @@ export default function OrganizationSelection() {
       <div className="w-full max-w-lg">
         <div className="space-y-10">
           <div className="space-y-3 text-center">
-            <h1 className="text-4xl font-semibold tracking-tight">
-              Organization Selection
-            </h1>
-            <p className="text-muted-foreground text-lg max-w-md mx-auto">
+            <h1 className="text-heading text-3xl">Organization Selection</h1>
+            <p className="text-muted-foreground max-w-md mx-auto">
               To get started with Gnosis, you need to select or create an
               organization.
             </p>

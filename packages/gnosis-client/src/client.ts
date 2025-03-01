@@ -104,73 +104,80 @@ export class GnosisApiClient {
         body: body ? JSON.stringify(body) : undefined,
       });
 
-      let rawResponseText: string;
+      // Handle non-JSON response first (before trying to parse)
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        if (this.enableDebug) {
+          console.error(
+            `[API Error] Expected JSON but got ${
+              contentType || "unknown content type"
+            }`
+          );
+        }
+        return {
+          success: false,
+          error: `Server returned non-JSON response: ${
+            contentType || "unknown content type"
+          }`,
+        };
+      }
+
+      // Parse the JSON response
+      let apiResponse: ApiResponse<T>;
 
       try {
-        // Clone the response for debugging
-        const responseClone = response.clone();
-        rawResponseText = await responseClone.text();
+        // Parse the response directly as an ApiResponse
+        apiResponse = (await response.json()) as ApiResponse<T>;
 
         if (this.enableDebug) {
           console.log(
             `[API Response] ${method} ${url} - Status: ${response.status}`,
-            rawResponseText ? rawResponseText.substring(0, 300) : "No content"
+            apiResponse
           );
         }
-      } catch (e) {
-        rawResponseText = "";
-        if (this.enableDebug) {
-          console.error("Error cloning response for debugging:", e);
-        }
-      }
-
-      // Try to parse the response as JSON
-      let data: Record<string, unknown>;
-      try {
-        // Use the raw text to parse JSON instead of response.json()
-        data = rawResponseText ? JSON.parse(rawResponseText) : {};
       } catch (e) {
         if (this.enableDebug) {
           console.error(
             `[API Error] Failed to parse JSON from ${method} ${url}:`,
             e
           );
-          console.error(`[API Error] Raw response: ${rawResponseText}`);
+
+          // Try to get the raw text for debugging
+          try {
+            const rawText = await response.clone().text();
+            console.error(
+              `[API Error] Raw response: ${rawText.substring(0, 200)}`
+            );
+          } catch {
+            console.error("[API Error] Could not get raw response text");
+          }
         }
 
-        // Handle case where response isn't valid JSON
         return {
           success: false,
           error: `Failed to parse response as JSON: ${
             e instanceof Error ? e.message : String(e)
-          }${
-            rawResponseText
-              ? `. Raw response: ${rawResponseText.substring(0, 100)}...`
-              : ""
           }`,
         };
       }
 
-      if (!response.ok) {
+      // If response status is not OK, ensure we return an error response
+      if (!response.ok && apiResponse.success) {
+        // This would be an inconsistency between HTTP status and response body
         if (this.enableDebug) {
-          console.error(
-            `[API Error] ${method} ${url} - Status: ${response.status}`,
-            data
+          console.warn(
+            `[API Warning] HTTP status ${response.status} but response indicates success`
           );
         }
 
         return {
           success: false,
-          error:
-            (data.error as string) ||
-            `Request failed with status ${response.status}: ${response.statusText}`,
+          error: `Request failed with status ${response.status}: ${response.statusText}`,
         };
       }
 
-      return {
-        success: true,
-        data: data as unknown as T,
-      };
+      // Return the API response directly without wrapping it again
+      return apiResponse;
     } catch (error) {
       if (this.enableDebug) {
         console.error(
@@ -249,10 +256,27 @@ export class GnosisApiClient {
    * }
    * ```
    *
+   * @example
+   * ```typescript
+   * // Create a named API key
+   * const result = await client.createApiKey("Development Key");
+   *
+   * if (result.success) {
+   *   console.log(`New API key: ${result.data.apiKey}`);
+   * }
+   * ```
+   *
+   * @param name - Optional name for the API key
    * @returns Promise resolving to the newly created API key
    */
-  async createApiKey(): Promise<ApiResponse<CreateApiKeyResponse>> {
-    return this.request<CreateApiKeyResponse>(`/api/v1/api_keys`, "POST");
+  async createApiKey(
+    name?: string
+  ): Promise<ApiResponse<CreateApiKeyResponse>> {
+    const body: Record<string, string> = {};
+
+    if (name) body.name = name;
+
+    return this.request<CreateApiKeyResponse>(`/api/v1/api_keys`, "POST", body);
   }
 
   /**

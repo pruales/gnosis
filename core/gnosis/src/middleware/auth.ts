@@ -31,6 +31,12 @@ export const companyAuth: MiddlewareHandler = async (c, next) => {
   }
 
   c.set("companyId", key.companyId);
+
+  // Set creator information from API key if available
+  if (key.creator) {
+    c.set("creator", key.creator);
+  }
+
   return next();
 };
 
@@ -86,6 +92,14 @@ export const clerkAuth: MiddlewareHandler = async (c, next) => {
     // Use the organization ID as the company ID
     c.set("companyId", orgId);
 
+    // Get user information for creator
+    const user = await clerkClient.users.getUser(session.userId);
+    if (user && user.emailAddresses && user.emailAddresses.length > 0) {
+      // Use primary email as creator
+      const primaryEmail = user.emailAddresses[0].emailAddress;
+      c.set("creator", primaryEmail);
+    }
+
     return next();
   } catch (error) {
     console.error("Clerk authentication error:", error);
@@ -120,6 +134,11 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
     }
 
     c.set("companyId", key.companyId);
+
+    // Set creator information from API key if available
+    if (key.creator) {
+      c.set("creator", key.creator);
+    }
 
     return next();
   } else {

@@ -4,7 +4,7 @@ import { DB, schema } from "db";
 export class ApiKeyService {
   constructor(private readonly db: DB) {}
 
-  async create(companyId: string) {
+  async create(companyId: string, creator: string, name?: string) {
     const randomBytes = new Uint8Array(30);
     crypto.getRandomValues(randomBytes);
     const randomString = btoa(String.fromCharCode(...randomBytes))
@@ -14,10 +14,15 @@ export class ApiKeyService {
     const apiKey = `sk-${randomString}`;
     const hashedKey = await this.hashKey(apiKey);
 
-    await this.db.insert(schema.apiKeys).values({
+    // Create the insert values object
+    const insertValues: any = {
       companyId,
       hashedKey,
-    });
+      creator,
+      name: name || "API Key",
+    };
+
+    await this.db.insert(schema.apiKeys).values(insertValues);
 
     return apiKey;
   }

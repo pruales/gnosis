@@ -5,10 +5,40 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Base */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Typography */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+
+  --typography-size-xs: 0.75rem;
+  --typography-size-sm: 0.875rem;
+  --typography-size-base: 1rem;
+  --typography-size-lg: 1.125rem;
+  --typography-size-xl: 1.25rem;
+  --typography-size-2xl: 1.5rem;
+  --typography-size-3xl: 1.875rem;
+  --typography-size-4xl: 2.25rem;
+
+  --typography-header-color: var(--foreground);
+  --typography-body-color: var(--foreground);
+  --typography-muted-color: var(--muted-foreground);
+
+  --typography-nav-label-color: var(--muted-foreground);
+
+  /* Existing theme variables */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -82,7 +112,7 @@
 }
 
 .dark {
-  --background: oklch(0.147 0.004 49.25);
+  --background: oklch(0.1 0.003 40);
   --foreground: oklch(0.985 0.001 106.423);
   --card: oklch(0.147 0.004 49.25);
   --card-foreground: oklch(0.985 0.001 106.423);
@@ -106,13 +136,13 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.216 0.006 56.043);
+  --sidebar: oklch(0.147 0.004 49.25);
   --sidebar-foreground: oklch(0.985 0.001 106.423);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-accent: oklch(0.268 0.007 34.298);
+  --sidebar-accent: oklch(0.18 0.005 30);
   --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-border: oklch(0.268 0.007 34.298);
+  --sidebar-border: oklch(0.2 0.005 35);
   --sidebar-ring: oklch(0.553 0.013 58.071);
 }
 
@@ -122,5 +152,24 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Typography utilities */
+  .text-heading {
+    @apply font-light tracking-wide transition-all duration-200;
+  }
+
+  .text-body {
+    @apply text-foreground;
+  }
+
+  .text-nav-label {
+    @apply text-xs font-semibold tracking-wider text-muted-foreground uppercase;
+  }
+
+  .text-nav-item {
+    @apply text-sm font-normal;
   }
 }
