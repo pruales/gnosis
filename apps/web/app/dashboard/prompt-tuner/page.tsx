@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { getInstructionsPrompt } from "./actions";
 import { PromptTunerEditor } from "@/components/prompts/prompt-tuner-editor";
-import { Message } from "gnosis-client";
+import { Message } from "@gnosis.dev/sdk";
 
 export default async function PromptTunerPage() {
   let currentPrompt: Message[] = [];

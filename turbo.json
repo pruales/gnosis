@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/turbo/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "persistent": true,
+      "cache": false
+    },
+    "db:generate": {
+      "dependsOn": ["^db:generate"]
+    },
+    "db:migrate": {
+      "dependsOn": ["^db:migrate"]
+    },
+    "db:studio": {
+      "dependsOn": ["^db:studio"]
+    }
+  }
+}

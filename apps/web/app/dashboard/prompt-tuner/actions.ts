@@ -1,7 +1,7 @@
 "use server";
 
 import { createAuthenticatedGnosisClient } from "@/lib/gnosis-client";
-import { Message } from "gnosis-client";
+import { Message } from "@gnosis.dev/sdk";
 import { revalidatePath } from "next/cache";
 
 /**

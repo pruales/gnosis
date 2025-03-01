@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Key, Trash, Copy, Check } from "lucide-react";
-import { ApiKey } from "gnosis-client";
+import { ApiKey } from "@gnosis.dev/sdk";
 import { formatDistanceToNow } from "date-fns";
 import { useTransition, useState } from "react";
 import { toast } from "sonner";

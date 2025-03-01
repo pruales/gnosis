@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Message } from "gnosis-client";
+import { Message } from "@gnosis.dev/sdk";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";

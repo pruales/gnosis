@@ -1,21 +1,21 @@
-# Gnosis API Client
+# Gnosis SDK
 
-A TypeScript client for interacting with the Gnosis API, featuring a clean, intuitive design.
+A TypeScript SDK for interacting with the Gnosis API, featuring a clean, intuitive design.
 
 ## Installation
 
 ```bash
 # npm
-npm install gnosis-client
+npm install @gnosis.dev/sdk
 
 # yarn
-yarn add gnosis-client
+yarn add @gnosis.dev/sdk
 
 # pnpm
-pnpm add gnosis-client
+pnpm add @gnosis.dev/sdk
 
 # bun
-bun add gnosis-client
+bun add @gnosis.dev/sdk
 ```
 
 ## Usage
@@ -23,7 +23,7 @@ bun add gnosis-client
 ### Initializing the Client
 
 ```typescript
-import { GnosisApiClient } from "gnosis-client";
+import { GnosisApiClient } from "@gnosis.dev/sdk";
 
 // Initialize with API key
 const client = new GnosisApiClient({
@@ -45,9 +45,6 @@ The client provides a simple, flat API structure with methods directly on the cl
 ```typescript
 // Memory operations
 const memory = await client.getMemory("memory_123");
-
-// API key operations
-const apiKeys = await client.listApiKeys();
 
 // Prompt operations
 const prompt = await client.getInstructionsPrompt();
@@ -81,6 +78,52 @@ if (result.success) {
 
 ## API Methods
 
+### Health Check
+
+```typescript
+// Check if the API is available
+const health = await client.ping();
+if (health.success) {
+  console.log(`API is online with status: ${health.data.status}`);
+}
+```
+
+### API Key Methods
+
+```typescript
+// List all API keys
+const keys = await client.listApiKeys();
+
+// Create a new API key
+const newKey = await client.createApiKey();
+if (newKey.success) {
+  // Store this key securely - it won't be retrievable again
+  console.log(`API Key: ${newKey.data.apiKey}`);
+}
+
+// Create a new API key with a name
+const namedKey = await client.createApiKey("Development Key");
+
+// Revoke an API key
+const revoked = await client.revokeApiKey("key_123");
+```
+
+### Prompt Methods
+
+```typescript
+// Get the current instructions prompt
+const prompt = await client.getInstructionsPrompt();
+
+// Set a new instructions prompt
+const updated = await client.setInstructionsPrompt([
+  { role: "system", content: "You are a helpful AI assistant." },
+  { role: "user", content: "Tell me about machine learning." },
+]);
+
+// Reset instructions to default
+const reset = await client.resetInstructionsPrompt();
+```
+
 ### Memory Methods
 
 ```typescript
@@ -110,53 +153,10 @@ const deleted = await client.deleteMemory("memory_123");
 
 // Search memories
 const searchResults = await client.searchMemories(
-  "machine learning",
-  "user_123",
-  50
+  "machine learning", // Search query
+  "user_123", // User ID to filter by
+  50 // Optional: Maximum results to return (default: 100)
 );
-```
-
-### API Key Methods
-
-```typescript
-// List all API keys
-const keys = await client.listApiKeys();
-
-// Create a new API key
-const newKey = await client.createApiKey();
-if (newKey.success) {
-  // Store this key securely - it won't be retrievable again
-  console.log(`API Key: ${newKey.data.apiKey}`);
-}
-
-// Revoke an API key
-const revoked = await client.revokeApiKey("key_123");
-```
-
-### Prompt Methods
-
-```typescript
-// Get the current instructions prompt
-const prompt = await client.getInstructionsPrompt();
-
-// Set a new instructions prompt
-const updated = await client.setInstructionsPrompt([
-  { role: "system", content: "You are a helpful AI assistant." },
-  { role: "user", content: "Tell me about machine learning." },
-]);
-
-// Reset instructions to default
-const reset = await client.resetInstructionsPrompt();
-```
-
-### Health Check
-
-```typescript
-// Check if the API is available
-const health = await client.ping();
-if (health.success) {
-  console.log(`API is online with status: ${health.data.status}`);
-}
 ```
 
 ## Advanced Usage
@@ -166,11 +166,6 @@ if (health.success) {
 ```typescript
 // Set API key after initialization
 client.setApiKey("your-new-api-key");
-
-// Alternative authentication with session token
-client.setSessionTokenGetter(async () => {
-  return await getAuthToken();
-});
 
 // Enable/disable debug logging
 client.setDebug(true);
@@ -218,41 +213,12 @@ try {
 }
 ```
 
-## Testing
-
-The package includes a comprehensive test suite to verify API functionality.
-
-### Running Tests
-
-```bash
-# Run all tests (API key is REQUIRED)
-bun test:api --api-key=your_api_key
-
-# Run only specific test groups
-bun test:api --api-key=your_api_key --test-group=health
-bun test:api --api-key=your_api_key --test-group=memories
-
-# Show detailed test output
-bun test:api --api-key=your_api_key --verbose
-
-# Show help
-bun test:api --help
-```
-
-Available test groups:
-
-- `health` - Test health endpoints
-- `keys` - Test API key endpoints
-- `prompts` - Test prompt endpoints
-- `memories` - Test memory endpoints
-- `all` - Run all tests (default)
-
 ## TypeScript Support
 
 This SDK is built with TypeScript and includes comprehensive type definitions:
 
 ```typescript
-import { GnosisApiClient, Memory, ApiResponse } from "gnosis-client";
+import { GnosisApiClient, Memory, ApiResponse } from "@gnosis.dev/sdk";
 
 // All types are exported for use in your application
 function processMemories(memories: Memory[]) {
@@ -263,6 +229,48 @@ function processMemories(memories: Memory[]) {
 async function fetchAndProcess(): Promise<void> {
   const response: ApiResponse<Memory> = await client.getMemory("mem_123");
   // TypeScript knows the shape of response.data if successful
+}
+```
+
+## Key Types
+
+The SDK exports the following important types:
+
+```typescript
+// API response wrapper
+type ApiResponse<T> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+};
+
+// Message type for conversations
+type Message = {
+  role: "system" | "user" | "assistant";
+  content: string;
+};
+
+// Memory type
+type Memory = {
+  id: string;
+  text: string;
+  metadata: {
+    userId: string;
+    memoryText: string;
+    orgId?: string;
+    agentId?: string;
+  };
+  namespace: string;
+  score?: number;
+};
+
+// List memories options
+interface ListMemoriesOptions {
+  userId?: string;
+  agentId?: string;
+  limit?: number;
+  cursor?: string;
+  includeTotal?: boolean;
 }
 ```
 

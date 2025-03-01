@@ -1,23 +1,22 @@
 {
-  "name": "gnosis-client",
+  "name": "@gnosis.dev/sdk",
   "version": "0.1.0",
-  "description": "API client for interacting with the Gnosis API",
+  "description": "SDK for interacting with the Gnosis API",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup",
+    "build": "pnpm run clean && tsup",
     "dev": "tsup --watch",
     "clean": "rm -rf dist",
-    "prepublishOnly": "bun run clean && bun run build",
-    "test:api": "bun test/api-test.ts"
+    "test:api": "pnpm run test/api-test.ts"
   },
   "keywords": [
     "gnosis",
     "api",
-    "client"
+    "sdk"
   ],
-  "author": "",
+  "author": "Emergent Labs",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
