@@ -1,23 +1,58 @@
 "use client";
 
 import * as React from "react";
-import { OrganizationSwitcher } from "@clerk/nextjs";
+import {
+  OrganizationSwitcher,
+  useAuth,
+  useOrganizationList,
+} from "@clerk/nextjs";
 import {
   SidebarMenu,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { redirect } from "next/navigation";
 
 export function OrgSwitcher() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const { isLoaded, orgId } = useAuth();
+  const {
+    userMemberships,
+    isLoaded: isOrgListLoaded,
+    setActive,
+  } = useOrganizationList({
+    userMemberships: true,
+  });
 
-  const { isLoaded, user } = useUser();
+  React.useEffect(() => {
+    const membershipResourceLoading = userMemberships.isLoading;
 
-  if (!isLoaded || !user) {
+    console.log("orgId", orgId);
+    console.log("userMemberships", userMemberships);
+    if (
+      !orgId &&
+      isLoaded &&
+      isOrgListLoaded &&
+      !membershipResourceLoading &&
+      userMemberships.count === 0
+    ) {
+      redirect("/org-selection");
+    }
+
+    if (!orgId && setActive && userMemberships.data?.[0]) {
+      const setActiveOrg = async () => {
+        await userMemberships.revalidate();
+        setActive(userMemberships.data?.[0]);
+      };
+
+      setActiveOrg().catch(console.error);
+    }
+  }, [orgId, isLoaded, isOrgListLoaded, userMemberships, setActive]);
+
+  if (!isLoaded || !orgId) {
     return (
       <SidebarMenu>
         <SidebarMenuItem className={cn(isCollapsed && "flex justify-center")}>
