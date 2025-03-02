@@ -1,6 +1,6 @@
 "use server";
 
-import { GnosisApiClient } from "gnosis-client";
+import { GnosisApiClient } from "@gnosis.dev/sdk";
 import { auth } from "@clerk/nextjs/server";
 
 export async function createAuthenticatedGnosisClient() {

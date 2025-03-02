@@ -1,7 +1,7 @@
 "use server";
 
 import { createAuthenticatedGnosisClient } from "@/lib/gnosis-client";
-import { ApiKey } from "gnosis-client";
+import { ApiKey } from "@gnosis.dev/sdk";
 import { revalidatePath } from "next/cache";
 
 /**

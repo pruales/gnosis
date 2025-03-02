@@ -1,7 +1,7 @@
 import { getApiKeys, createApiKey, revokeApiKey } from "./actions";
 import { ApiKeysTable } from "@/components/api-keys/api-key-manager";
 import { ApiKeyCreationFlow } from "@/components/api-keys/api-key-creation-flow";
-import { ApiKey } from "gnosis-client";
+import { ApiKey } from "@gnosis.dev/sdk";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 

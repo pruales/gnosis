@@ -8,10 +8,10 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "generate": "drizzle-kit generate",
-    "up": "drizzle-kit up",
-    "migrate": "drizzle-kit migrate",
-    "studio": "drizzle-kit studio"
+    "db:generate": "drizzle-kit generate",
+    "db:up": "drizzle-kit up",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
