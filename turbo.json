@@ -3,6 +3,7 @@
   "ui": "tui",
   "tasks": {
     "build": {
+      "env": ["CLERK_SECRET_KEY", "GNOSIS_API_URL"],
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
