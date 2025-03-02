@@ -1,6 +1,6 @@
 {
   "name": "@gnosis.dev/sdk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "SDK for interacting with the Gnosis API",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -9,7 +9,7 @@
     "build": "pnpm run clean && tsup",
     "dev": "tsup --watch",
     "clean": "rm -rf dist",
-    "test:api": "pnpm run test/api-test.ts"
+    "test:api": "bun run test/api-test.ts"
   },
   "keywords": [
     "gnosis",
@@ -25,8 +25,8 @@
     "dist",
     "README.md"
   ],
-  "dependencies": {},
   "devDependencies": {
+    "@types/bun": "^1.2.4",
     "@types/node": "^22.13.5",
     "dotenv": "^16.4.7",
     "tsup": "^8.4.0",
