@@ -43,7 +43,7 @@ export class GnosisApiClient {
    * @param options.debug Enable debug logging
    */
   constructor(options: GnosisClientOptions) {
-    this.baseUrl = options?.baseUrl || "https://gnosis.emergentlabs.dev";
+    this.baseUrl = options?.baseUrl || "https://api.gnosis.emergentlabs.dev";
     this.apiKey = options?.apiKey;
     this.enableDebug = options?.debug || false;
   }

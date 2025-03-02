@@ -1,15 +1,9 @@
 {
-  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "gnosis",
   "main": "src/index.ts",
   "compatibility_flags": ["nodejs_compat"],
   "compatibility_date": "2025-02-14",
-  "vars": {
-    "OPENAI_API_KEY": "ensure-this-is-set",
-    "ADMIN_API_KEY": "ensure-this-is-set",
-    "CLERK_SECRET_KEY": "ensure-this-is-set",
-    "CLERK_PUBLISHABLE_KEY": "ensure-this-is-set"
-  },
   "ai": {
     "binding": "AI"
   },
