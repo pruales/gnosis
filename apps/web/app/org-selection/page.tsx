@@ -2,8 +2,10 @@
 
 import { OrganizationList } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function OrganizationSelection() {
+// Create a separate client component that uses useSearchParams
+function OrganizationSelectionContent() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirectUrl") ?? "/dashboard";
 
@@ -60,5 +62,27 @@ export default function OrganizationSelection() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function OrganizationSelection() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-background/30">
+          <div className="w-full max-w-lg">
+            <div className="space-y-10 text-center">
+              <h1 className="text-heading text-3xl">Organization Selection</h1>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Loading organization options...
+              </p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <OrganizationSelectionContent />
+    </Suspense>
   );
 }

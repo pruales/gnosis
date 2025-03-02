@@ -2,17 +2,17 @@ import { getApiKeys, createApiKey, revokeApiKey } from "./actions";
 import { ApiKeysTable } from "@/components/api-keys/api-key-manager";
 import { ApiKeyCreationFlow } from "@/components/api-keys/api-key-creation-flow";
 import { ApiKey } from "@gnosis.dev/sdk";
-import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function ApiKeysPage() {
   let apiKeys: ApiKey[] = [];
+  let errorMessage: string | null = null;
 
   try {
     apiKeys = await getApiKeys();
   } catch (error) {
     console.error("Error fetching API keys:", error);
-    toast.error("Error fetching API keys");
+    errorMessage = "Failed to load API keys. Please try again.";
   }
 
   return (
@@ -24,6 +24,12 @@ export default async function ApiKeysPage() {
           </p>
         </div>
       </div>
+
+      {errorMessage && (
+        <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive">
+          {errorMessage}
+        </div>
+      )}
 
       <div className="mt-6 space-y-6">
         <Card>

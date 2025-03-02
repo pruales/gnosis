@@ -5,7 +5,7 @@
     "build": {
       "env": ["CLERK_SECRET_KEY", "GNOSIS_API_URL"],
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", ".next/**"]
     },
     "dev": {
       "persistent": true,

@@ -1,15 +1,16 @@
-import { toast } from "sonner";
-import { getInstructionsPrompt } from "./actions";
 import { PromptTunerEditor } from "@/components/prompts/prompt-tuner-editor";
 import { Message } from "@gnosis.dev/sdk";
+import { getInstructionsPrompt } from "./actions";
 
 export default async function PromptTunerPage() {
   let currentPrompt: Message[] = [];
+  let errorMessage: string | null = null;
+
   try {
     currentPrompt = await getInstructionsPrompt();
   } catch (error) {
     console.error("Error fetching instructions prompt:", error);
-    toast.error("Error fetching instructions prompt");
+    errorMessage = "Failed to load prompts. Please try again.";
   }
 
   return (
@@ -21,6 +22,12 @@ export default async function PromptTunerPage() {
           </p>
         </div>
       </div>
+
+      {errorMessage && (
+        <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive">
+          {errorMessage}
+        </div>
+      )}
 
       {currentPrompt.length > 0 && (
         <PromptTunerEditor initialPrompt={currentPrompt} />
