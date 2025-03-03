@@ -44,7 +44,8 @@ authRoutes.use("*", async (c, next) => {
     c.env.AI,
     c.env.OPENAI_API_KEY,
     promptService,
-    memory
+    memory,
+    c.env.MODEL_ID
   );
 
   c.set("gnosis", gnosis);

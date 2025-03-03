@@ -97,7 +97,9 @@ Guidelines for fact extraction by category:
 
 15. Misc:
     - Extract: Any other personal information that doesn't neatly fit into the above categories but is directly tied to the user.
-    - Ignore: Random facts or general information that do not have a clear personal link.`,
+    - Ignore: Random facts or general information that do not have a clear personal link.
+
+  **IMPORTANT**: You must ONLY return a valid JSON object and nothing else. No conversation, no explanations.`,
   },
 ];
 

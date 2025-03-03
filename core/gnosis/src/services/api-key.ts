@@ -22,9 +22,12 @@ export class ApiKeyService {
       name: name || "API Key",
     };
 
-    await this.db.insert(schema.apiKeys).values(insertValues);
+    const [apiKeyId] = await this.db
+      .insert(schema.apiKeys)
+      .values(insertValues)
+      .returning({ id: schema.apiKeys.id });
 
-    return apiKey;
+    return { apiKey, apiKeyId: apiKeyId.id };
   }
 
   async verify(apiKey: string) {

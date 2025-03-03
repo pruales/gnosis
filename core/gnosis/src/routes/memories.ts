@@ -27,6 +27,14 @@ const searchMemoriesSchema = z.object({
   limit: z.number().optional(),
 });
 
+const listMemoriesSchema = z.object({
+  userId: z.string().optional(),
+  agentId: z.string().optional(),
+  limit: z.coerce.number().optional().default(50),
+  cursor: z.string().optional(),
+  include_total: z.coerce.boolean().optional().default(false),
+});
+
 /**
  * Utility function to verify a memory belongs to the company
  * Returns the memory if it exists and belongs to the company, otherwise handles the error response
@@ -63,23 +71,8 @@ memoryRoutes.post("/", zValidator("json", addMemorySchema), async (c) => {
     return successResponse(c, result);
   } catch (err) {
     const error = err as Error;
+    console.error(error);
     return errorResponse(c, error.message, 500);
-  }
-});
-
-/**
- * Retrieve a memory by ID for a company
- * Route: GET /api/v1/memories/{memory_id}
- */
-memoryRoutes.get("/:memory_id", async (c) => {
-  const memoryId = c.req.param("memory_id");
-
-  try {
-    // Use the utility function to verify and retrieve the memory
-    const memory = await verifyMemoryOwnership(c, memoryId);
-    return successResponse(c, memory);
-  } catch (err) {
-    return errorResponse(c, "Memory not found", 404);
   }
 });
 
@@ -104,6 +97,65 @@ memoryRoutes.post(
     }
   }
 );
+
+/**
+ * List memories with optional filtering by userId and/or agentId
+ * - All filters are combined with AND logic when provided
+ * - Company's orgId is automatically applied for security
+ * - If no filters are provided, returns all memories for the company
+ * - Uses cursor-based pagination to paginate through results
+ * Route: GET /api/v1/memories/list
+ */
+memoryRoutes.get(
+  "/list",
+  zValidator("query", listMemoriesSchema),
+  async (c) => {
+    const memory = c.get("memory");
+    const { userId, agentId, limit, cursor, include_total } =
+      c.req.valid("query");
+    const companyId = c.get("companyId") as string;
+
+    try {
+      const filterCriteria = {
+        userId,
+        agentId,
+        orgId: companyId,
+      };
+
+      const result = await memory.getByFilters(
+        filterCriteria,
+        limit,
+        cursor,
+        include_total
+      );
+
+      return successResponse(c, {
+        data: result.records,
+        pagination: result.pagination,
+      });
+    } catch (err) {
+      const error = err as Error;
+      console.error("Error listing memories:", error);
+      return errorResponse(c, error.message, 500);
+    }
+  }
+);
+
+/**
+ * Retrieve a memory by ID for a company
+ * Route: GET /api/v1/memories/{memory_id}
+ */
+memoryRoutes.get("/:memory_id", async (c) => {
+  const memoryId = c.req.param("memory_id");
+
+  try {
+    // Use the utility function to verify and retrieve the memory
+    const memory = await verifyMemoryOwnership(c, memoryId);
+    return successResponse(c, memory);
+  } catch (err) {
+    return errorResponse(c, "Memory not found", 404);
+  }
+});
 
 /**
  * Update a memory for a company
@@ -151,56 +203,5 @@ memoryRoutes.delete("/:memory_id", async (c) => {
     return errorResponse(c, "Memory not found", 404);
   }
 });
-
-/**
- * List memories with optional filtering by userId and/or agentId
- * - All filters are combined with AND logic when provided
- * - Company's orgId is automatically applied for security
- * - If no filters are provided, returns all memories for the company
- * - Uses cursor-based pagination to paginate through results
- * Route: GET /api/v1/memories/list
- */
-const listMemoriesSchema = z.object({
-  userId: z.string().optional(),
-  agentId: z.string().optional(),
-  limit: z.coerce.number().optional().default(50),
-  cursor: z.string().optional(),
-  include_total: z.coerce.boolean().optional().default(false),
-});
-
-memoryRoutes.get(
-  "/list",
-  zValidator("query", listMemoriesSchema),
-  async (c) => {
-    const memory = c.get("memory");
-    const { userId, agentId, limit, cursor, include_total } =
-      c.req.valid("query");
-    const companyId = c.get("companyId") as string;
-
-    try {
-      const filterCriteria = {
-        userId,
-        agentId,
-        orgId: companyId,
-      };
-
-      const result = await memory.getByFilters(
-        filterCriteria,
-        limit,
-        cursor,
-        include_total
-      );
-
-      return successResponse(c, {
-        data: result.records,
-        pagination: result.pagination,
-      });
-    } catch (err) {
-      const error = err as Error;
-      console.error("Error listing memories:", error);
-      return errorResponse(c, error.message, 500);
-    }
-  }
-);
 
 export default memoryRoutes;

@@ -5,11 +5,13 @@
   "packageManager": "pnpm@9.14.2",
   "scripts": {
     "dev": "wrangler dev  --port 8787 --ip 127.0.0.1",
-    "deploy": "wrangler deploy --minify"
+    "deploy": "wrangler deploy --minify",
+    "test:e2e": "pnpm tsx test/e2e/e2e-test.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.1.11",
     "@clerk/backend": "^1.24.2",
+    "@gnosis.dev/sdk": "workspace:*",
     "@hono/zod-validator": "^0.4.2",
     "@paralleldrive/cuid2": "^2.2.2",
     "ai": "^4.1.40",
@@ -25,6 +27,7 @@
     "@cloudflare/workers-types": "^4.20250109.0",
     "@types/better-sqlite3": "^7.6.12",
     "drizzle-kit": "^0.30.4",
+    "tsx": "^4.19.3",
     "vitest": "2.1.8",
     "wrangler": "^3.101.0"
   }

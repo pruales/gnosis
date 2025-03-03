@@ -20,9 +20,10 @@ export class Gnosis {
     ai: Ai,
     openaiApiKey: string,
     promptService: PromptService,
-    memory: Memory
+    memory: Memory,
+    modelId: ModelId
   ) {
-    this.modelFactory = new ModelFactory(ai, openaiApiKey);
+    this.modelFactory = new ModelFactory(ai, openaiApiKey, modelId);
     this.memory = memory;
     this.promptService = promptService;
   }
@@ -217,6 +218,7 @@ export class Gnosis {
         metadata: {
           userId: memory.userId,
           memoryText: text,
+          orgId: memory.orgId,
         },
       },
     ]);

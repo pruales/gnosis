@@ -9,7 +9,7 @@
  *   bun test/client-test.ts --api-key=<your-api-key> [--verbose] [--test-group=<group>]
  */
 
-import { GnosisApiClient, Message, ApiResponse } from "../src";
+import { GnosisApiClient, Message, ApiResponse } from "@gnosis.dev/sdk";
 import { parseArgs } from "util";
 
 // Parse command line arguments
@@ -31,7 +31,7 @@ if (args.values.help) {
 Gnosis API Client Test Suite
 
 Usage:
-  bun test/client-test.ts --api-key=<your-api-key> [options]
+  pnpm test:e2e --api-key=<your-api-key> [options]
 
 Options:
   --api-key=<key>      Your API key (REQUIRED)
@@ -49,7 +49,7 @@ const API_KEY = args.values["api-key"];
 const BASE_URL = process.env.API_BASE_URL || "http://localhost:8787";
 const TEST_USER_ID = "test-user-id";
 const TEST_GROUP = args.values["test-group"] || "all";
-const VERBOSE = args.values.verbose || false;
+const VERBOSE = args.values.verbose || true;
 const BAIL = args.values.bail || false;
 const TIMEOUT = parseInt(args.values.timeout as string, 10) || 30000;
 
@@ -60,10 +60,10 @@ if (!API_KEY) {
 Please provide your API key via the --api-key parameter.
 
 Example:
-  bun test/client-test.ts --api-key=your_api_key_here
+  pnpm test:e2e --api-key=your_api_key_here
   
 For more information, run:
-  bun test/client-test.ts --help
+  pnpm test:e2e --help
 `);
   process.exit(1);
 }
@@ -276,7 +276,7 @@ async function runTests() {
       },
       keys: {
         name: "API Keys",
-        tests: [testGetApiKeys, testCreateApiKey],
+        tests: [testGetApiKeys, testCreateApiKey, testRevokeApiKey],
       },
       prompts: {
         name: "Prompts",
@@ -336,6 +336,9 @@ async function runTests() {
     if (testState.results.failed > 0) {
       process.exit(1);
     }
+
+    // Exit successfully if all tests passed
+    process.exit(0);
   } catch (error) {
     console.error(
       `\n${colors.red}${colors.bright}❌ Test suite failed:${colors.reset}`,
@@ -380,11 +383,7 @@ async function testCreateApiKey() {
       };
     }
 
-    // Store API key ID for later tests if it exists
-    if ("id" in data) {
-      testState.newApiKeyId = data.id as string;
-    }
-
+    testState.newApiKeyId = data.apiKeyId;
     return { isValid: true };
   });
 

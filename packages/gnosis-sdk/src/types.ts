@@ -22,6 +22,11 @@ export interface CreateApiKeyResponse {
    * The API key value - store securely as it won't be retrievable again
    */
   apiKey: string;
+
+  /**
+   * The ID of the newly created API key
+   */
+  apiKeyId: string;
 }
 
 /**

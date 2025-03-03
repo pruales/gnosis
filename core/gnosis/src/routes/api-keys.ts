@@ -84,8 +84,12 @@ apiKeyRoutes.post(
     console.log(
       `Creating API key for company: ${companyId} by creator: ${creator}`
     );
-    const apiKey = await apiKeyService.create(companyId, creator, name);
-    return successResponse(c, { apiKey }, 201);
+    const { apiKey, apiKeyId } = await apiKeyService.create(
+      companyId,
+      creator,
+      name
+    );
+    return successResponse(c, { apiKey, apiKeyId }, 201);
   }
 );
 

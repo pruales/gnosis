@@ -1,7 +1,7 @@
 import { Gnosis } from "./gnosis";
 import type { DB } from "db";
 import Memory from "./util/ai/memory";
-
+import { ModelId } from "./util/ai/llm";
 export type Bindings = {
   AI: Ai;
   VECTORIZE: VectorizeIndex;
@@ -10,6 +10,7 @@ export type Bindings = {
   HYPERDRIVE: Hyperdrive;
   CLERK_SECRET_KEY: string;
   CLERK_PUBLISHABLE_KEY: string;
+  MODEL_ID: ModelId;
 };
 
 export type Variables = {

@@ -94,9 +94,23 @@ export class Memory {
       const result = await this.db
         .insert(schema.memories)
         .values(records)
+        .onConflictDoUpdate({
+          target: schema.memories.id,
+          where: inArray(
+            schema.memories.id,
+            records.filter((r) => r.id).map((r) => r.id!)
+          ),
+          set: {
+            embedding: sql`EXCLUDED.embedding`,
+            userId: sql`EXCLUDED.user_id`,
+            orgId: sql`EXCLUDED.org_id`,
+            memoryText: sql`EXCLUDED.memory_text`,
+            agentId: sql`EXCLUDED.agent_id`,
+          },
+        })
         .returning({ id: schema.memories.id });
 
-      console.log(`Inserted ${result.length} memories`);
+      console.log(`Inserted/Updated ${result.length} memories`);
 
       return result.map((r: { id: string }) => r.id);
     } catch (error) {
@@ -136,13 +150,17 @@ export class Memory {
       return await this.db.transaction(async (tx) => {
         if (this.config.diskAnnSearchListSize !== undefined) {
           await tx.execute(
-            sql`SET LOCAL diskann.query_search_list_size = ${this.config.diskAnnSearchListSize}`
+            sql.raw(
+              `SET LOCAL diskann.query_search_list_size = ${this.config.diskAnnSearchListSize}`
+            )
           );
         }
 
         if (this.config.diskAnnRescore !== undefined) {
           await tx.execute(
-            sql`SET LOCAL diskann.query_rescore = ${this.config.diskAnnRescore}`
+            sql.raw(
+              `SET LOCAL diskann.query_rescore = ${this.config.diskAnnRescore}`
+            )
           );
         }
 
