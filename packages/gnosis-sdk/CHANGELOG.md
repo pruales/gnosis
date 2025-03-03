@@ -1,5 +1,11 @@
 # @gnosis.dev/sdk
 
+## 1.1.0
+
+### Minor Changes
+
+- d98d091: adding id to api key methods
+
 ## 1.0.0
 
 ### Major Changes
