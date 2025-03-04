@@ -19,7 +19,7 @@ export const apiKeys = pgTable(
     revoked: boolean("revoked").notNull().default(false),
     createdAt: timestamp("created_at", {
       precision: 6,
-      mode: "date",
+      mode: "string",
       withTimezone: true,
     })
       .notNull()
@@ -40,14 +40,14 @@ export const prompts = pgTable("prompts", {
   promptContent: text("prompt_content").notNull(),
   createdAt: timestamp("created_at", {
     precision: 6,
-    mode: "date",
+    mode: "string",
     withTimezone: true,
   })
     .notNull()
     .defaultNow(),
   updatedAt: timestamp("updated_at", {
     precision: 6,
-    mode: "date",
+    mode: "string",
     withTimezone: true,
   })
     .notNull()
