@@ -6,7 +6,7 @@ import promptsRouter from "./prompts";
 import { authMiddleware } from "../middleware/auth";
 import { PromptService } from "../services/prompt";
 import { Gnosis } from "../gnosis";
-import Memory from "../util/ai/memory";
+import Memory from "../lib/ai/memory";
 import { errorResponse } from "../utils/response";
 
 // =========================================
@@ -27,9 +27,6 @@ authRoutes.use("*", authMiddleware);
 authRoutes.use("*", async (c, next) => {
   const db = c.get("db");
   const promptService = new PromptService(db);
-
-  console.log(c.req.path);
-  console.log(c.req.param());
 
   const companyId = c.get("companyId");
 

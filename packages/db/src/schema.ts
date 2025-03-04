@@ -17,7 +17,13 @@ export const apiKeys = pgTable(
     name: text("name").default("API Key"),
     creator: text("creator").notNull(),
     revoked: boolean("revoked").notNull().default(false),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", {
+      precision: 6,
+      mode: "string",
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("api_keys_company_id_idx").on(table.companyId),
@@ -32,8 +38,20 @@ export const prompts = pgTable("prompts", {
   id: uuid("id").primaryKey().defaultRandom(),
   companyId: text("company_id").notNull().unique(),
   promptContent: text("prompt_content").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at", {
+    precision: 6,
+    mode: "string",
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", {
+    precision: 6,
+    mode: "string",
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
 });
 
 export type Prompts = typeof prompts.$inferSelect;
@@ -47,9 +65,21 @@ export const memories = pgTable(
     userId: text("user_id").notNull(),
     orgId: text("org_id").notNull(),
     memoryText: text("memory_text").notNull(),
-    agentId: text("agent_id").default(""),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    agentId: text("agent_id"),
+    createdAt: timestamp("created_at", {
+      precision: 6,
+      mode: "string",
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", {
+      precision: 6,
+      mode: "string",
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("memories_user_id_idx").on(table.userId),
@@ -59,8 +89,9 @@ export const memories = pgTable(
       "diskann",
       table.embedding.op("vector_cosine_ops")
     ),
+    index("created_at_id_index").on(table.createdAt, table.id),
   ]
 );
 
-export type Memories = typeof memories.$inferSelect;
-export type MemoriesInsert = typeof memories.$inferInsert;
+export type Memory = typeof memories.$inferSelect;
+export type MemoryInsert = typeof memories.$inferInsert;

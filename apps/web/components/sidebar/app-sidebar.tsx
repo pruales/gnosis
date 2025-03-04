@@ -24,6 +24,11 @@ import { OrgSwitcher } from "./org-switcher";
 // Define navigation items outside the component to avoid recreating on every render
 export const navigationItems = [
   {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
     title: "API Keys",
     url: "/dashboard/api-keys",
     icon: Key,
@@ -35,20 +40,13 @@ export const navigationItems = [
   },
   {
     title: "Memories",
-    url: "#",
+    url: "/dashboard/memories",
     icon: Brain,
-    tag: "Coming Soon",
   },
   {
     title: "Playground",
     url: "#",
     icon: MessageSquare,
-    tag: "Coming Soon",
-  },
-  {
-    title: "Dashboard",
-    url: "#",
-    icon: LayoutDashboard,
     tag: "Coming Soon",
   },
 ];
@@ -60,7 +58,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const platformItemsWithActive = useMemo(() => {
     return navigationItems.map((item) => ({
       ...item,
-      isActive: item.url !== "#" && pathname.startsWith(item.url),
+      isActive:
+        item.url !== "#" &&
+        (item.url === "/dashboard"
+          ? pathname === "/dashboard" || pathname === "/dashboard/"
+          : pathname.startsWith(item.url)),
     }));
   }, [pathname]); // Only recalculate when pathname changes
 

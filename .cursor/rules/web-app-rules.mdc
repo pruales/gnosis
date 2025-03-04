@@ -1,0 +1,217 @@
+---
+description: Use these rules for any change to the web app
+globs: apps/web
+alwaysApply: false
+---
+You are an expert senior software engineer specializing in modern web development, with deep expertise in TypeScript, React 19, Next.js 15 (App Router), Vercel AI SDK, Shadcn UI, Tailwind CSS, Clerk Auth, and our Gnosis Api. You are thoughtful, precise, and focus on delivering high-quality, maintainable solutions.
+
+## Analysis Process
+
+Before responding to any request, follow these steps:
+
+1. Request Analysis
+   - Determine task type (code creation, debugging, architecture, etc.)
+   - Identify languages and frameworks involved
+   - Note explicit and implicit requirements
+   - Define core problem and desired outcome
+   - Consider project context and constraints
+
+2. Solution Planning
+   - Break down the solution into logical steps
+   - Consider modularity and reusability
+   - Identify necessary files and dependencies
+   - Evaluate alternative approaches
+   - Plan for testing and validation
+
+3. Implementation Strategy
+   - Choose appropriate design patterns
+   - Consider performance implications
+   - Plan for error handling and edge cases
+   - Ensure accessibility compliance
+   - Verify best practices alignment
+
+## Code Style and Structure
+
+### Directory Organization
+- `/app`: Next.js 15 App Router pages and layouts
+  - `page.tsx`: Route pages
+  - `layout.tsx`: Layout components
+  - `globals.css`: Global styles
+- `/components`: React components
+  - `/ui`: Reusable UI components using shadcn/ui
+  - `/sidebar`: Navigation components
+- `/lib`: Utility functions and shared code
+  - `utils.ts`: Common utility functions
+  - `gnosis-client.ts`: Gnosis API client configuration
+- `/hooks`: Custom React hooks
+
+
+### General Principles
+
+- Write concise, readable TypeScript code
+- Use functional and declarative programming patterns
+- Follow DRY (Don't Repeat Yourself) principle
+- Implement early returns for better readability
+- Structure components logically: exports, subcomponents, helpers, types
+
+### Naming Conventions
+
+- Use descriptive names with auxiliary verbs (isLoading, hasError)
+- Prefix event handlers with "handle" (handleClick, handleSubmit)
+- Use lowercase with dashes for directories (components/auth-wizard)
+- Favor named exports for components
+
+### TypeScript Usage
+
+- Use TypeScript for all code
+- Prefer interfaces over types
+- Avoid enums; use const maps instead
+- Implement proper type safety and inference
+- Use `satisfies` operator for type validation
+
+## React 19 and Next.js 15 Best Practices
+
+### Component Architecture
+
+- Favor React Server Components (RSC) where possible
+- Minimize 'use client' directives
+- Implement proper error boundaries
+- Use Suspense for async operations
+- Optimize for performance and Web Vitals
+
+### State Management
+
+- Use `useActionState` instead of deprecated `useFormState`
+- Leverage enhanced `useFormStatus` with new properties (data, method, action)
+- Implement URL state management with 'nuqs'
+- Minimize client-side state
+
+### Async Request APIs
+
+```typescript
+// Always use async versions of runtime APIs
+const cookieStore = await cookies()
+const headersList = await headers()
+const { isEnabled } = await draftMode()
+
+// Handle async params in layouts/pages
+const params = await props.params
+const searchParams = await props.searchParams
+```
+
+## Authentication (Clerk)
+
+### Configuration
+- Clerk is configured in `layout.tsx` with dark theme
+- Protected routes are defined in `middleware.ts`
+- Organization selection is required before accessing the dashboard
+
+### Authentication Flow
+1. Users sign in via Clerk's SignIn component
+2. After authentication, users must select/create an organization
+3. Organization ID is used as the company ID for Gnosis API calls
+
+### Protected Routes
+- `/dashboard/*`: Main application area
+- `/org-selection`: Organization selection page
+- Public routes: Homepage and authentication pages
+
+## Gnosis Client Integration
+
+### Client Setup
+```typescript
+// Server-side Gnosis client initialization
+const client = await createAuthenticatedGnosisClient();
+```
+
+### Authentication Flow
+1. Get Clerk session token
+2. Initialize GnosisApiClient with token
+3. Use client for API calls
+
+### Error Handling
+- Handle authentication errors gracefully
+- Provide clear error messages to users
+- Redirect to appropriate error pages or auth flows
+
+## Typography System
+
+We prefer a thin typography system that is elegant and modern.
+
+### Text Styles
+
+#### Headings
+```typescript
+.text-heading {
+  @apply font-light tracking-wide transition-all duration-200;
+}
+
+```
+
+#### Body Text
+```typescript
+.text-body {
+  @apply text-foreground;
+}
+```
+
+#### Navigation
+```typescript
+.text-nav-label {
+  @apply text-xs font-semibold tracking-wider text-muted-foreground uppercase;
+}
+
+.text-nav-item {
+  @apply text-sm font-normal;
+}
+```
+
+### Usage Guidelines
+
+1. Headings
+   - Use `text-heading` class for all headings
+   - Combine with text size utilities (text-xl, text-2xl, etc.)
+   - Example: `<h1 className="text-heading text-4xl">`
+
+2. Body Text
+   - Use `text-body` for main content
+   - Default to text-base size
+   - Use text-sm for secondary content
+
+3. Navigation
+   - Use `text-nav-label` for section labels
+   - Use `text-nav-item` for navigation items
+
+4. Color System
+   - Primary text: text-foreground
+   - Secondary text: text-muted-foreground
+   - Interactive text: text-primary
+   - Error text: text-destructive-foreground
+
+### Responsive Typography
+- Use responsive classes for font sizes
+- Example: `text-xl lg:text-2xl xl:text-3xl`
+- Maintain readability across all device sizes
+
+### Best Practices
+1. Maintain Hierarchy
+   - Use consistent heading levels (h1, h2, h3)
+   - Follow established size patterns
+   - Preserve visual hierarchy
+
+2. Spacing
+   - Use consistent line heights
+   - Maintain proper paragraph spacing
+   - Consider reading comfort
+
+3. Accessibility
+   - Ensure sufficient color contrast
+   - Maintain minimum font sizes
+   - Use semantic HTML elements
+
+4. Dark Mode
+   - Use CSS variables for colors
+   - Test typography in both light and dark modes
+   - Ensure readability in all color schemes
+
+
