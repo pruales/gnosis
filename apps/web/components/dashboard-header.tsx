@@ -9,12 +9,15 @@ import { navigationItems } from "@/components/sidebar/app-sidebar";
 
 // Helper function to get page title from pathname
 function getPageTitle(pathname: string): string {
-  if (pathname === "/dashboard") return "Overview";
+  if (pathname === "/dashboard" || pathname === "/dashboard/")
+    return "Dashboard";
 
   // First try to match with navigation items
   const navItem = navigationItems.find(
     (item: { url: string; title: string }) =>
-      item.url !== "#" && pathname.startsWith(item.url)
+      item.url !== "#" &&
+      item.url !== "/dashboard" && // Exclude dashboard from general matching
+      pathname.startsWith(item.url)
   );
 
   return navItem?.title || "";

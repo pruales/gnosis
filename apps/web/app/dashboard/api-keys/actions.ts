@@ -16,7 +16,10 @@ export async function getApiKeys(): Promise<ApiKey[]> {
       throw new Error(response.error || "Failed to fetch API keys");
     }
 
-    return response.data.keys;
+    return response.data.keys.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   } catch (error) {
     console.error("Error fetching API keys:", error);
     throw error;

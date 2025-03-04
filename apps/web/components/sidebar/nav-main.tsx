@@ -42,7 +42,7 @@ export function NavMain({
                 className="flex items-center w-full whitespace-nowrap text-nav-item"
               >
                 {item.icon && (
-                  <item.icon className="size-4 shrink-0 mr-2 text-foreground opacity-80" />
+                  <item.icon className="size-4 shrink-0 mr-2 text-foreground opacity-80 stroke-[1.75]" />
                 )}
                 <span className="truncate">{item.title}</span>
                 {item.tag && (

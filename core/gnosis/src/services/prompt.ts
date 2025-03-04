@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { DB, schema } from "db";
 import { CoreMessage } from "ai";
-import { FACT_EXTRACTION_PROMPT } from "../util/ai/prompts";
+import { FACT_EXTRACTION_PROMPT } from "../lib/ai/prompts";
 
 export class PromptService {
   constructor(private readonly db: DB) {}

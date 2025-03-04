@@ -1,9 +1,9 @@
-import { ModelFactory, ModelId } from "./util/ai/llm";
-import Memory, { MemoryMetadata, QueryOptions } from "./util/ai/memory";
+import { ModelFactory, ModelId } from "./lib/ai/llm";
+import Memory, { MemoryMetadata, QueryOptions } from "./lib/ai/memory";
 import {
   FACT_EXTRACTION_PROMPT,
   generateMemoryUpdateMessages,
-} from "./util/ai/prompts";
+} from "./lib/ai/prompts";
 import { z } from "zod";
 import { CoreMessage, generateObject } from "ai";
 import { PromptService } from "./services/prompt";
@@ -57,6 +57,8 @@ export class Gnosis {
     });
     const facts = factsResponse.object;
 
+    console.log(`extracted ${facts.facts.length} facts`);
+
     // 2. Get similar existing memories - use formatted messages for similarity search
     const queryOptions: QueryOptions = {
       userId: userId,
@@ -102,6 +104,8 @@ export class Gnosis {
       temperature: Gnosis.DEFAULT_TEMPERATURE,
     });
     const memoryUpdates = memoryUpdatesResponse.object;
+
+    console.log(`memoryUpdates: ${JSON.stringify(memoryUpdates)}`);
 
     // 4. Process memory updates - map back to real UUIDs
     const updates = [];
@@ -165,6 +169,8 @@ export class Gnosis {
           break;
       }
     }
+
+    console.log(`processed ${updates.length} updates`);
 
     return updates;
   }

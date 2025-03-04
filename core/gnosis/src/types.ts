@@ -1,7 +1,7 @@
 import { Gnosis } from "./gnosis";
 import type { DB } from "db";
-import Memory from "./util/ai/memory";
-import { ModelId } from "./util/ai/llm";
+import Memory from "./lib/ai/memory";
+import { ModelId } from "./lib/ai/llm";
 export type Bindings = {
   AI: Ai;
   VECTORIZE: VectorizeIndex;

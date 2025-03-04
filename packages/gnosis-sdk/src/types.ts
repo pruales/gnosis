@@ -95,14 +95,22 @@ export interface PromptOperationResponse {
 // Memory types
 export type Memory = {
   id: string;
-  text: string;
-  metadata: {
+  embedding?: number[];
+  userId: string;
+  orgId: string;
+  memoryText: string;
+  agentId: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  // Keep these optional for backward compatibility
+  text?: string;
+  metadata?: {
     userId: string;
     memoryText: string;
     orgId?: string;
     agentId?: string;
   };
-  namespace: string;
+  namespace?: string;
   score?: number;
 };
 
@@ -205,39 +213,16 @@ export interface ListMemoriesOptions {
   limit?: number;
 
   /**
-   * Cursor for pagination (memory ID to start after)
+   * Cursor for forward pagination (memory ID to start after)
+   * Cannot be used simultaneously with ending_before
    */
-  cursor?: string;
+  starting_after?: string;
 
   /**
-   * Whether to include total count (expensive for large datasets)
+   * Cursor for backward pagination (memory ID to end before)
+   * Cannot be used simultaneously with starting_after
    */
-  includeTotal?: boolean;
-}
-
-/**
- * Pagination metadata returned by the API
- */
-export interface PaginationMeta {
-  /**
-   * Whether there are more results available
-   */
-  has_more: boolean;
-
-  /**
-   * ID of the last memory in the current page, use as cursor for next page
-   */
-  next_cursor: string | null;
-
-  /**
-   * Maximum number of results returned per page
-   */
-  limit: number;
-
-  /**
-   * Total number of memories matching the filter (only present if includeTotal was true)
-   */
-  total?: number;
+  ending_before?: string;
 }
 
 /**
@@ -250,9 +235,9 @@ export interface PaginatedMemoriesResponse {
   data: Memory[];
 
   /**
-   * Pagination metadata
+   * Whether there are more results available
    */
-  pagination: PaginationMeta;
+  has_more: boolean;
 }
 
 /**

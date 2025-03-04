@@ -30,9 +30,15 @@ const searchMemoriesSchema = z.object({
 const listMemoriesSchema = z.object({
   userId: z.string().optional(),
   agentId: z.string().optional(),
-  limit: z.coerce.number().optional().default(50),
-  cursor: z.string().optional(),
-  include_total: z.coerce.boolean().optional().default(false),
+  limit: z.coerce
+    .number()
+    .optional()
+    .default(50)
+    .refine((val) => val >= 1 && val <= 100, {
+      message: "Limit must be between 1 and 100",
+    }),
+  starting_after: z.string().uuid().optional(),
+  ending_before: z.string().uuid().optional(),
 });
 
 /**
@@ -111,11 +117,22 @@ memoryRoutes.get(
   zValidator("query", listMemoriesSchema),
   async (c) => {
     const memory = c.get("memory");
-    const { userId, agentId, limit, cursor, include_total } =
+    const { userId, agentId, limit, starting_after, ending_before } =
       c.req.valid("query");
     const companyId = c.get("companyId") as string;
 
+    console.log("[INCOMING REQUEST PARAMS]", c.req.query());
+
     try {
+      // Ensure starting_after and ending_before are not used together
+      if (starting_after && ending_before) {
+        return errorResponse(
+          c,
+          "The parameters starting_after and ending_before cannot be used simultaneously",
+          400
+        );
+      }
+
       const filterCriteria = {
         userId,
         agentId,
@@ -125,13 +142,14 @@ memoryRoutes.get(
       const result = await memory.getByFilters(
         filterCriteria,
         limit,
-        cursor,
-        include_total
+        false,
+        starting_after,
+        ending_before
       );
 
       return successResponse(c, {
-        data: result.records,
-        pagination: result.pagination,
+        data: result.data,
+        has_more: result.has_more,
       });
     } catch (err) {
       const error = err as Error;

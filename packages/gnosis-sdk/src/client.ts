@@ -442,7 +442,7 @@ export class GnosisApiClient {
   }
 
   /**
-   * List memories with optional filtering and cursor-based pagination
+   * List memories with optional filtering and bidirectional cursor-based pagination
    *
    * @example
    * ```typescript
@@ -461,26 +461,24 @@ export class GnosisApiClient {
    *
    * @example
    * ```typescript
-   * // Get next page using cursor
+   * // Forward pagination (next page) using starting_after
    * const page1 = await client.listMemories({ limit: 10 });
-   * if (page1.success && page1.data.pagination.has_more) {
+   * if (page1.success && page1.data.has_more) {
    *   const page2 = await client.listMemories({
-   *     cursor: page1.data.pagination.next_cursor
+   *     starting_after: page1.data.data[page1.data.data.length - 1].id
    *   });
    * }
    * ```
    *
    * @example
    * ```typescript
-   * // Combined filtering with total count
-   * const response = await client.listMemories({
-   *   userId: "user_123",
-   *   agentId: "agent_456",
-   *   includeTotal: true
-   * });
-   *
-   * if (response.success) {
-   *   console.log(`Total records: ${response.data.pagination.total}`);
+   * // Backward pagination (previous page) using ending_before
+   * const initialPage = await client.listMemories({ limit: 10 });
+   * if (initialPage.success && initialPage.data.data.length > 0) {
+   *   // Get previous page
+   *   const prevPage = await client.listMemories({
+   *     ending_before: initialPage.data.data[0].id
+   *   });
    * }
    * ```
    *
@@ -495,8 +493,18 @@ export class GnosisApiClient {
     if (options?.userId) params.append("userId", options.userId);
     if (options?.agentId) params.append("agentId", options.agentId);
     if (options?.limit) params.append("limit", options.limit.toString());
-    if (options?.cursor) params.append("cursor", options.cursor);
-    if (options?.includeTotal) params.append("include_total", "true");
+
+    // Bidirectional pagination support
+    if (options?.starting_after && options?.ending_before) {
+      throw new Error(
+        "starting_after and ending_before parameters cannot be used simultaneously"
+      );
+    }
+
+    if (options?.starting_after)
+      params.append("starting_after", options.starting_after);
+    if (options?.ending_before)
+      params.append("ending_before", options.ending_before);
 
     const queryString = params.toString() ? `?${params.toString()}` : "";
 

@@ -11,6 +11,7 @@
     "db:generate": "drizzle-kit generate",
     "db:up": "drizzle-kit up",
     "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {

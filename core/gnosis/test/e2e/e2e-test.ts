@@ -1,4 +1,3 @@
-#!/usr/bin/env bun
 /**
  * Gnosis API Client Test Suite
  *

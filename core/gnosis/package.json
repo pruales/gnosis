@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@9.14.2",
+  "type": "module",
   "scripts": {
     "dev": "wrangler dev  --port 8787 --ip 127.0.0.1",
     "deploy": "wrangler deploy --minify",
-    "test:e2e": "pnpm tsx test/e2e/e2e-test.ts"
+    "test:e2e": "pnpm tsx test/e2e/e2e-test.ts",
+    "test": "vitest --watch=false"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.1.11",
@@ -28,6 +30,7 @@
     "@types/better-sqlite3": "^7.6.12",
     "drizzle-kit": "^0.30.4",
     "tsx": "^4.19.3",
+    "vite": "^6.2.0",
     "vitest": "2.1.8",
     "wrangler": "^3.101.0"
   }

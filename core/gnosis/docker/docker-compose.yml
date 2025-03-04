@@ -16,6 +16,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    command: >
+      postgres
+        -c log_statement=all
+        -c log_duration=on
+        -c log_min_duration_statement=0
+        -c client_min_messages=notice
+        -c log_min_messages=info
+        -c log_destination=stderr
 
   postgres-init:
     image: postgres:17
