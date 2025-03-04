@@ -102,15 +102,6 @@ export type Memory = {
   agentId: string | null;
   createdAt: string | Date;
   updatedAt: string | Date;
-  // Keep these optional for backward compatibility
-  text?: string;
-  metadata?: {
-    userId: string;
-    memoryText: string;
-    orgId?: string;
-    agentId?: string;
-  };
-  namespace?: string;
   score?: number;
 };
 
