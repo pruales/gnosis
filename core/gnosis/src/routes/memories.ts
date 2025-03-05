@@ -91,7 +91,7 @@ memoryRoutes.post(
   zValidator("json", searchMemoriesSchema),
   async (c) => {
     const gnosis = c.get("gnosis");
-    const { query, userId, limit = 100 } = c.req.valid("json");
+    const { query, userId, limit = 20 } = c.req.valid("json");
     const companyId = c.get("companyId") as string;
 
     try {

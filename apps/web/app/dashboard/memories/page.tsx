@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { X } from "lucide-react";
+import { X, Trash2, Pencil, Check, X as XIcon } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   ColumnDef,
@@ -32,7 +32,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Memory } from "@gnosis.dev/sdk";
-import { getMemories, MemoriesFilter } from "./actions";
+import {
+  getMemories,
+  MemoriesFilter,
+  deleteMemory,
+  updateMemory,
+} from "./actions";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 // Define the columns for the table
 const columns: ColumnDef<Memory>[] = [
@@ -112,6 +129,11 @@ export default function MemoriesPage() {
   const [errorCount, setErrorCount] = useState(0);
   const lastFetchTime = useRef<number>(0);
   const MIN_FETCH_INTERVAL = 2000; // Minimum 2 seconds between fetches
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Create memoized table instance
   const table = useReactTable({
@@ -333,6 +355,63 @@ export default function MemoriesPage() {
     }
 
     fetchData(filter);
+  };
+
+  // Handle memory deletion
+  const handleDeleteMemory = async () => {
+    if (!selectedMemory) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await deleteMemory(selectedMemory.id);
+      if (result.success) {
+        toast.success("Memory deleted successfully");
+        setSelectedMemory(null);
+        // Refresh the memories list
+        fetchData({
+          userId: userIdFilter || undefined,
+          agentId: agentIdFilter || undefined,
+          limit: parseInt(limitFilter),
+        });
+      } else {
+        toast.error(result.error || "Failed to delete memory");
+      }
+    } catch (err: unknown) {
+      console.error("Delete memory error:", err);
+      toast.error("An error occurred while deleting the memory");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  // Handle memory update
+  const handleUpdateMemory = async () => {
+    if (!selectedMemory) return;
+
+    setIsUpdating(true);
+    try {
+      const result = await updateMemory(selectedMemory.id, editedText);
+      if (result.success) {
+        toast.success("Memory updated successfully");
+        setIsEditing(false);
+        // Update the selected memory with new text
+        setSelectedMemory({ ...selectedMemory, memoryText: editedText });
+        // Refresh the memories list
+        fetchData({
+          userId: userIdFilter || undefined,
+          agentId: agentIdFilter || undefined,
+          limit: parseInt(limitFilter),
+        });
+      } else {
+        toast.error(result.error || "Failed to update memory");
+      }
+    } catch (err: unknown) {
+      console.error("Update memory error:", err);
+      toast.error("An error occurred while updating the memory");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -571,7 +650,9 @@ export default function MemoriesPage() {
       {selectedMemory && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setSelectedMemory(null)}
+          onClick={() => {
+            if (!isEditing) setSelectedMemory(null);
+          }}
         >
           <div
             className="bg-card p-6 rounded-lg max-w-3xl w-full max-h-[80vh] overflow-auto"
@@ -590,21 +671,109 @@ export default function MemoriesPage() {
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={() => setSelectedMemory(null)}
-                  className="p-2 hover:bg-muted rounded-full"
-                >
-                  <X size={20} />
-                </button>
+                <div className="flex items-center gap-2">
+                  {!isEditing && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditedText(selectedMemory.memoryText || "");
+                          setIsEditing(true);
+                        }}
+                      >
+                        <Pencil size={18} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                      >
+                        <Trash2 size={18} className="text-destructive" />
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      if (isEditing) {
+                        setIsEditing(false);
+                        setEditedText("");
+                      } else {
+                        setSelectedMemory(null);
+                      }
+                    }}
+                  >
+                    <X size={20} />
+                  </Button>
+                </div>
               </div>
 
               <div className="prose prose-sm dark:prose-invert max-w-none">
-                {selectedMemory.memoryText || "No content available"}
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <Textarea
+                      value={editedText}
+                      onChange={(e) => setEditedText(e.target.value)}
+                      className="min-h-[200px] w-full"
+                      placeholder="Enter memory text..."
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsEditing(false);
+                          setEditedText("");
+                        }}
+                        disabled={isUpdating}
+                      >
+                        <XIcon size={16} className="mr-2" />
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleUpdateMemory}
+                        disabled={isUpdating || !editedText.trim()}
+                      >
+                        <Check size={16} className="mr-2" />
+                        {isUpdating ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  selectedMemory.memoryText || "No content available"
+                )}
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              memory.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMemory}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
