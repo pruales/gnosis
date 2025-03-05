@@ -18,15 +18,36 @@ export type MemoryMetadata = {
 };
 
 export interface QueryOptions {
-  userId?: string;
-  orgId?: string;
-  agentId?: string;
+  text?: string;
+  embedding?: number[];
+  limit?: number;
+  filters?: {
+    userId?: string;
+    orgId?: string;
+    agentId?: string;
+  };
 }
 
 export interface MemoryConfig {
   diskAnnSearchListSize?: number; // Default: 100
   diskAnnRescore?: number; // Default: 50
 }
+
+export type MemoryMatch = {
+  id: string;
+  score: number;
+  metadata: {
+    userId: string;
+    orgId: string;
+    agentId: string | null;
+    memoryText: string;
+    categories: string[] | null;
+  };
+};
+
+export type QueryResult = {
+  matches: MemoryMatch[];
+};
 
 export class Memory {
   private ai: Ai;
@@ -46,36 +67,56 @@ export class Memory {
     this.config = config;
   }
 
+  async embed(texts: string[]) {
+    const embeddings = (
+      await this.ai.run("@cf/baai/bge-base-en-v1.5", {
+        text: texts,
+      })
+    ).data;
+    if (!embeddings) {
+      throw new Error("Unable to embed text");
+    }
+    return embeddings;
+  }
+
   /**
    * Add memory vectors to the DB
    */
   async add(
     items: {
       id?: string;
-      text: string;
-      metadata: MemoryMetadata;
+      embedding?: number[];
+      memory: Pick<
+        schema.MemoryInsert,
+        "memoryText" | "userId" | "orgId" | "agentId"
+      >;
     }[]
   ): Promise<string[]> {
+    const missingEmbeddings = items.filter((item) => !item.embedding);
+    const embeddings = await this.embed(
+      missingEmbeddings.map((item) => item.memory.memoryText)
+    );
+    const embeddingsMap = new Map<string, number[]>();
+    for (const [index, embedding] of embeddings.entries()) {
+      embeddingsMap.set(missingEmbeddings[index].memory.memoryText, embedding);
+    }
     try {
       console.log(`Adding ${items.length} vectors`);
-      const embeddings = await this.ai.run("@cf/baai/bge-base-en-v1.5", {
-        text: items.map((i) => i.text),
-      });
-      if (!embeddings.data) {
-        throw new Error("embedding values are undefined");
-      }
 
       const records = items.map((item, i) => {
-        const orgId = item.metadata.orgId;
+        const orgId = item.memory.orgId;
         if (!orgId) {
           throw new Error(`Memory ${item.id || "(unknown)"} has no orgId`);
         }
+
         const rec: schema.MemoryInsert = {
-          embedding: embeddings.data[i],
-          userId: item.metadata.userId,
+          embedding: item.embedding
+            ? item.embedding!
+            : embeddingsMap.get(item.memory.memoryText)!,
+          userId: item.memory.userId,
           orgId,
-          memoryText: item.metadata.memoryText || item.text,
-          agentId: item.metadata.agentId || "",
+          memoryText: item.memory.memoryText,
+          agentId: item.memory.agentId || "",
         };
         if (item.id) rec.id = item.id;
         return rec;
@@ -111,24 +152,34 @@ export class Memory {
   /**
    * Query for top-k relevant memories for the given text
    */
-  async query(text: string, k: number = 10, options?: QueryOptions) {
-    if (!text) return;
+  async query({
+    text,
+    embedding,
+    limit = 10,
+    filters,
+  }: QueryOptions): Promise<QueryResult> {
+    if (!text && !embedding) {
+      throw new Error("text or embedding must be provided");
+    }
     try {
-      const embedding = await this.ai.run("@cf/baai/bge-base-en-v1.5", {
-        text,
-      });
-      const values = embedding.data[0];
-      if (!values) {
+      let embeddingVector: number[];
+      if (text) {
+        const cleanText = text?.trim().replace(/\n/g, " ");
+        [embeddingVector] = await this.embed([cleanText]);
+      } else {
+        embeddingVector = embedding!;
+      }
+      if (!embeddingVector) {
         throw new Error("embedding values are undefined");
       }
 
       const conditions: SQL[] = [];
-      if (options?.userId)
-        conditions.push(eq(schema.memories.userId, options.userId));
-      if (options?.orgId)
-        conditions.push(eq(schema.memories.orgId, options.orgId));
-      if (options?.agentId)
-        conditions.push(eq(schema.memories.agentId, options.agentId));
+      if (filters?.userId)
+        conditions.push(eq(schema.memories.userId, filters.userId));
+      if (filters?.orgId)
+        conditions.push(eq(schema.memories.orgId, filters.orgId));
+      if (filters?.agentId)
+        conditions.push(eq(schema.memories.agentId, filters.agentId));
 
       return await this.db.transaction(async (tx) => {
         //TODO: Tune these globally
@@ -154,13 +205,17 @@ export class Memory {
             userId: schema.memories.userId,
             orgId: schema.memories.orgId,
             memoryText: schema.memories.memoryText,
+            categories: schema.memories.categories,
             agentId: schema.memories.agentId,
-            similarity: cosineDistance(schema.memories.embedding, values),
+            similarity: cosineDistance(
+              schema.memories.embedding,
+              embeddingVector
+            ),
           })
           .from(schema.memories)
           .where(conditions.length > 0 ? and(...conditions) : undefined)
-          .orderBy(cosineDistance(schema.memories.embedding, values))
-          .limit(k);
+          .orderBy(cosineDistance(schema.memories.embedding, embeddingVector))
+          .limit(limit);
 
         return {
           matches: results.map((r) => ({
@@ -171,6 +226,7 @@ export class Memory {
               orgId: r.orgId,
               agentId: r.agentId,
               memoryText: r.memoryText,
+              categories: r.categories,
             },
           })),
         };
@@ -293,6 +349,7 @@ export class Memory {
           orgId: schema.memories.orgId,
           agentId: schema.memories.agentId,
           memoryText: schema.memories.memoryText,
+          categories: schema.memories.categories,
           createdAt: schema.memories.createdAt,
           updatedAt: schema.memories.updatedAt,
         })
@@ -321,6 +378,7 @@ export class Memory {
           orgId: schema.memories.orgId,
           agentId: schema.memories.agentId,
           memoryText: schema.memories.memoryText,
+          categories: schema.memories.categories,
           createdAt: schema.memories.createdAt,
           updatedAt: schema.memories.updatedAt,
         })

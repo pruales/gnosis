@@ -29,6 +29,20 @@
       "when": 1741062723770,
       "tag": "0003_handy_colonel_america",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1741154958678,
+      "tag": "0004_hard_pestilence",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1741160321064,
+      "tag": "0005_amused_bloodstrike",
+      "breakpoints": true
     }
   ]
 }

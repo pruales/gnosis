@@ -10,11 +10,9 @@ For each piece of extracted information, you should output a JSON object with th
 [
   {
     "fact": "<extracted fact>",
-    "categories": ["<category1>", "<category2>", ...]
   },
   {
     "fact": "<extracted fact2>",
-    "categories": ["<category3>", "<category4>", ...]
   }
 ]
 
