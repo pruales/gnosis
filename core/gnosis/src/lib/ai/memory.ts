@@ -93,12 +93,22 @@ export class Memory {
     }[]
   ): Promise<string[]> {
     const missingEmbeddings = items.filter((item) => !item.embedding);
-    const embeddings = await this.embed(
-      missingEmbeddings.map((item) => item.memory.memoryText)
+    console.log(
+      `Missing embeddings: ${missingEmbeddings.length}`,
+      missingEmbeddings
     );
-    const embeddingsMap = new Map<string, number[]>();
-    for (const [index, embedding] of embeddings.entries()) {
-      embeddingsMap.set(missingEmbeddings[index].memory.memoryText, embedding);
+    let embeddingsMap: Map<string, number[]>;
+    if (missingEmbeddings.length > 0) {
+      const embeddings = await this.embed(
+        missingEmbeddings.map((item) => item.memory.memoryText)
+      );
+      embeddingsMap = new Map<string, number[]>();
+      for (const [index, embedding] of embeddings.entries()) {
+        embeddingsMap.set(
+          missingEmbeddings[index].memory.memoryText,
+          embedding
+        );
+      }
     }
     try {
       console.log(`Adding ${items.length} vectors`);

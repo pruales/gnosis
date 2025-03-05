@@ -121,16 +121,6 @@ export function generateMemoryUpdateMessages(
 {"memory": [{"id": "1", "text": "John likes apples"}]}
 </oldMemoryJson>
 <ideal_output>
-<fact_evaluation>
-1. Summary: The new fact states that John prefers bananas over apples.
-2. Related information from old memory: The old memory states that John likes apples.
-3. Arguments for each action:
-   - ADD: This could be considered new information about John's preferences.
-   - UPDATE: This directly relates to and changes the existing information about John's apple preference.
-   - DELETE: This doesn't completely invalidate the old information, so deletion is not appropriate.
-   - NONE: The information is different from what we currently have, so no action is not appropriate.
-4. Final decision: UPDATE. This new fact directly changes the meaning of the existing memory. It's not just adding a new, related fact, but rather modifying our understanding of John's fruit preferences.
-</fact_evaluation>
 {
   "memory": [
     {
@@ -145,27 +135,16 @@ export function generateMemoryUpdateMessages(
 </example>
 <example>
 <newFactsJson>
-"Clouds are white"
+"My favorite color is blue"
 </newFactsJson>
 <oldMemoryJson>
-{"memory": [{"id": "1", "text": "The sky is blue"}]}
+{"memory": [{"id": "1", "text": "I love to paint"}]}
 </oldMemoryJson>
 <ideal_output>
-<fact_evaluation>
-1. Summary: The new fact states that clouds are white.
-2. Related information from old memory: The old memory states that the sky is blue.
-3. Arguments for each action:
-   - ADD: This is new information about a different aspect of the sky (clouds) that isn't mentioned in the existing memory.
-   - UPDATE: While related to the sky, this doesn't directly change or contradict the existing information about the sky's color.
-   - DELETE: This new fact doesn't invalidate the existing information, so deletion is not appropriate.
-   - NONE: The information about clouds is not present in the current memory, so no action is not appropriate.
-4. Final decision: ADD. This new fact, while related to the sky, is a separate piece of information that doesn't directly update or contradict the existing memory. It's a new, related fact that should be added as a separate entry.
-</fact_evaluation>
 {
   "memory": [
     {
-      "id": "2",
-      "text": "Clouds are white",
+      "text": "My favorite color is blue",
       "event": "ADD"
     }
   ]
@@ -192,7 +171,7 @@ For each new fact, you must decide on one of the following actions:
 3. "DELETE": If the fact contradicts or invalidates old memory.
 4. "NONE": If no action is required (e.g., the fact is already present in the memory).
 
-Before making your decision, analyze each new fact carefully. Show your thought process for each fact inside <fact_evaluation> tags. For each fact, follow these steps:
+Before making your decision, analyze each new fact carefully. For each fact, follow these steps:
 
 1. Summarize the new fact.
 2. List any related information from the old memory.
@@ -213,7 +192,7 @@ After your analysis, provide your output in JSON format with the following struc
 {
   "memory": [
     {
-      "id": "<string or index if old memory>",
+      "id": "<string or index if old memory>", // include only if event is "UPDATE"
       "text": "<string>",
       "event": "ADD|UPDATE|DELETE|NONE",
       "old_memory": "<previous text>"   // include only if event is "UPDATE"
@@ -225,6 +204,7 @@ Important notes:
 - Include the "old_memory" field only when the event is "UPDATE".
 - When updating memories, don't reference old memories in the new text.
 - Ensure that each piece of information is stored separately, even if they are related.
+- Make sure to call the right tool to output the right format
 
 Begin your response with your evaluation of each new fact, and then provide the JSON output.`,
     },

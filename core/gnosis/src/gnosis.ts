@@ -60,6 +60,11 @@ export class Gnosis {
     });
     const facts = factsResponse.object;
 
+    if (facts.facts.length === 0) {
+      console.log("No facts extracted");
+      return [];
+    }
+
     console.log(`extracted ${facts.facts.length} facts`);
 
     const newEmbeddings = await this.memory.embed(
@@ -99,7 +104,6 @@ export class Gnosis {
       return {
         id: indexStr,
         text: m.metadata.memoryText,
-        categories: m.metadata.categories,
       };
     });
 
