@@ -1,0 +1,1 @@
+ALTER TABLE "memories" ALTER COLUMN "categories" DROP NOT NULL;

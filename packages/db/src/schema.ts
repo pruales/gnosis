@@ -65,6 +65,7 @@ export const memories = pgTable(
     userId: text("user_id").notNull(),
     orgId: text("org_id").notNull(),
     memoryText: text("memory_text").notNull(),
+    categories: text("categories").array(),
     agentId: text("agent_id"),
     createdAt: timestamp("created_at", {
       precision: 6,

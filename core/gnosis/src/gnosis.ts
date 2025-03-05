@@ -1,5 +1,9 @@
 import { ModelFactory, ModelId } from "./lib/ai/llm";
-import Memory, { MemoryMetadata, QueryOptions } from "./lib/ai/memory";
+import Memory, {
+  MemoryMatch,
+  MemoryMetadata,
+  QueryOptions,
+} from "./lib/ai/memory";
 import {
   FACT_EXTRACTION_PROMPT,
   generateMemoryUpdateMessages,
@@ -48,7 +52,6 @@ export class Gnosis {
         facts: z.array(
           z.object({
             fact: z.string(),
-            categories: z.array(z.string()),
           })
         ),
       }),
@@ -57,32 +60,52 @@ export class Gnosis {
     });
     const facts = factsResponse.object;
 
+    if (facts.facts.length === 0) {
+      console.log("No facts extracted");
+      return [];
+    }
+
     console.log(`extracted ${facts.facts.length} facts`);
 
-    // 2. Get similar existing memories - use formatted messages for similarity search
-    const queryOptions: QueryOptions = {
-      userId: userId,
-      orgId: orgId,
-    };
-
-    const similarMemories = await this.memory.query(
-      messages.map((m) => `${m.role}: ${m.content}`).join("\n"),
-      10,
-      queryOptions
+    const newEmbeddings = await this.memory.embed(
+      facts.facts.map((f) => f.fact)
     );
+    const newFactToEmbeddings = new Map<string, number[]>();
+    for (const [index, fact] of facts.facts.entries()) {
+      newFactToEmbeddings.set(fact.fact, newEmbeddings[index]);
+    }
+
+    // 2. Find similar memories for each fact
+    const similarMemories: MemoryMatch[] = [];
+    const seenIds = new Set<string>();
+    for (const [index] of facts.facts.entries()) {
+      const queryResult = await this.memory.query({
+        embedding: newEmbeddings[index],
+        limit: 10,
+        filters: {
+          userId: userId,
+          orgId: orgId,
+        },
+      });
+      for (const match of queryResult.matches) {
+        if (!seenIds.has(match.id)) {
+          seenIds.add(match.id);
+          similarMemories.push(match);
+        }
+      }
+    }
 
     // 3. Generate memory update decisions
     // Create a mapping of index to real UUIDs to prevent hallucinations
     const uuidMapping = new Map<string, string>();
-    const oldMemories =
-      similarMemories?.matches?.map((m, index) => {
-        const indexStr = index.toString();
-        uuidMapping.set(indexStr, m.id);
-        return {
-          id: indexStr,
-          text: m.metadata.memoryText,
-        };
-      }) ?? [];
+    const oldMemories = similarMemories.map((m, index) => {
+      const indexStr = index.toString();
+      uuidMapping.set(indexStr, m.id);
+      return {
+        id: indexStr,
+        text: m.metadata.memoryText,
+      };
+    });
 
     const oldMemoryJson = JSON.stringify(oldMemories);
     const newFactsJson = JSON.stringify({ facts: facts.facts });
@@ -114,11 +137,11 @@ export class Gnosis {
         case "ADD":
           const ids = await this.memory.add([
             {
-              text: update.text,
-              metadata: {
-                userId,
+              embedding: newFactToEmbeddings.get(update.text),
+              memory: {
                 memoryText: update.text,
-                orgId: orgId,
+                userId,
+                orgId,
               },
             },
           ]);
@@ -138,11 +161,10 @@ export class Gnosis {
           await this.memory.add([
             {
               id: realUuid,
-              text: update.text,
-              metadata: {
-                userId,
+              memory: {
                 memoryText: update.text,
-                orgId: orgId,
+                userId,
+                orgId,
               },
             },
           ]);
@@ -186,6 +208,7 @@ export class Gnosis {
       userId: memory.userId,
       orgId: memory.orgId,
       agentId: memory.agentId,
+      categories: memory.categories,
     };
   }
 
@@ -196,11 +219,14 @@ export class Gnosis {
     limit: number = 100
   ) {
     const queryOptions: QueryOptions = {
-      userId: userId,
-      orgId: orgId,
+      text: query,
+      filters: {
+        userId: userId,
+        orgId: orgId,
+      },
     };
 
-    const results = await this.memory.query(query, limit, queryOptions);
+    const results = await this.memory.query(queryOptions);
     if (!results?.matches) return [];
 
     return results.matches.map((m) => ({
@@ -220,10 +246,9 @@ export class Gnosis {
     await this.memory.add([
       {
         id: memoryId,
-        text,
-        metadata: {
-          userId: memory.userId,
+        memory: {
           memoryText: text,
+          userId: memory.userId,
           orgId: memory.orgId,
         },
       },
