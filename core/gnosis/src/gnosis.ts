@@ -72,6 +72,7 @@ export class Gnosis {
           inputSystem: system,
           inputMessages: messages,
         },
+        tags: ["fact_extraction"],
       });
       return response;
     });
@@ -157,6 +158,7 @@ export class Gnosis {
           inputSystem: messages[0].content,
           inputMessage: messages[1].content,
         },
+        tags: ["memory_update"],
       });
       return response;
     });
