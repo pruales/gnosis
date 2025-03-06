@@ -1,5 +1,11 @@
 # @gnosis.dev/sdk
 
+## 1.2.1
+
+### Patch Changes
+
+- 82a7e64: updating memory search result type
+
 ## 1.2.0
 
 ### Minor Changes
