@@ -1,6 +1,7 @@
 import { createWorkersAI, WorkersAI } from "workers-ai-provider";
 import { LanguageModelV1 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
+import { initLogger, Logger, wrapAISDKModel } from "braintrust";
 
 export type ModelId = "gpt-4o" | "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
@@ -26,8 +27,8 @@ export class ModelFactory {
         apiKey: this.openaiApiKey,
         compatibility: "strict",
       });
-      return openai("gpt-4o");
+      return wrapAISDKModel(openai("gpt-4o"));
     }
-    return this.workersAI(id);
+    return wrapAISDKModel(this.workersAI(id));
   }
 }

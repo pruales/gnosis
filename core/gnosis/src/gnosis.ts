@@ -11,6 +11,7 @@ import {
 import { z } from "zod";
 import { CoreMessage, generateObject } from "ai";
 import { PromptService } from "./services/prompt";
+import { traced } from "braintrust";
 
 export class Gnosis {
   private modelFactory: ModelFactory;
@@ -45,28 +46,40 @@ export class Gnosis {
     }
 
     // 1. Extract facts using LLM with properly formatted messages
-    const factsResponse = await generateObject({
-      model: this.modelFactory.getModel("gpt-4o"),
-      system: factExtractionPrompt[0].content as string,
-      messages: [...messages],
-      schema: z.object({
-        facts: z.array(
-          z.object({
-            fact: z.string(),
-          })
-        ),
-      }),
-      maxTokens: Gnosis.DEFAULT_MAX_TOKENS,
-      temperature: Gnosis.DEFAULT_TEMPERATURE,
+    const factsResponse = await traced(async (span) => {
+      const system = factExtractionPrompt[0].content as string;
+      const response = await generateObject({
+        model: this.modelFactory.getModel("gpt-4o"),
+        system,
+        messages: [...messages],
+        schema: z.object({
+          facts: z.array(
+            z.object({
+              fact: z.string(),
+            })
+          ),
+        }),
+        maxTokens: Gnosis.DEFAULT_MAX_TOKENS,
+        temperature: Gnosis.DEFAULT_TEMPERATURE,
+      });
+      span.log({
+        input: [system, ...messages],
+        output: response.object,
+        metadata: {
+          factsExtracted: response.object.facts,
+          userId,
+          orgId,
+        },
+      });
+      return response;
     });
     const facts = factsResponse.object;
+    console.log("facts extracted: ", facts);
 
     if (facts.facts.length === 0) {
       console.log("No facts extracted");
       return [];
     }
-
-    console.log(`extracted ${facts.facts.length} facts`);
 
     const newEmbeddings = await this.memory.embed(
       facts.facts.map((f) => f.fact)
@@ -111,21 +124,37 @@ export class Gnosis {
     const oldMemoryJson = JSON.stringify(oldMemories);
     const newFactsJson = JSON.stringify({ facts: facts.facts });
 
-    const memoryUpdatesResponse = await generateObject({
-      model: this.modelFactory.getModel("gpt-4o"),
-      messages: generateMemoryUpdateMessages(oldMemoryJson, newFactsJson),
-      schema: z.object({
-        memory: z.array(
-          z.object({
-            id: z.string().optional(),
-            text: z.string(),
-            event: z.enum(["ADD", "UPDATE", "DELETE", "NONE"]),
-            old_memory: z.string().optional(),
-          })
-        ),
-      }),
-      maxTokens: Gnosis.DEFAULT_MAX_TOKENS,
-      temperature: Gnosis.DEFAULT_TEMPERATURE,
+    const memoryUpdatesResponse = await traced(async (span) => {
+      const messages = generateMemoryUpdateMessages(
+        oldMemoryJson,
+        newFactsJson
+      );
+      const response = await generateObject({
+        model: this.modelFactory.getModel("gpt-4o"),
+        messages,
+        schema: z.object({
+          memory: z.array(
+            z.object({
+              id: z.string().optional(),
+              text: z.string(),
+              event: z.enum(["ADD", "UPDATE", "DELETE", "NONE"]),
+              old_memory: z.string().optional(),
+            })
+          ),
+        }),
+        maxTokens: Gnosis.DEFAULT_MAX_TOKENS,
+        temperature: Gnosis.DEFAULT_TEMPERATURE,
+      });
+      span.log({
+        input: messages,
+        output: response.object,
+        metadata: {
+          memoryUpdates: response.object.memory,
+          userId,
+          orgId,
+        },
+      });
+      return response;
     });
     const memoryUpdates = memoryUpdatesResponse.object;
 

@@ -4,6 +4,7 @@ import { Bindings, Variables } from "./types";
 import authRoutes from "./routes";
 import adminRoutes from "./routes/admin";
 import { successResponse, errorResponse } from "./utils/response";
+import { initLogger } from "braintrust";
 
 const app = new Hono<{
   Bindings: Bindings;
@@ -17,7 +18,13 @@ const app = new Hono<{
 app.use("*", async (c, next) => {
   const db = createDb(c.env.HYPERDRIVE.connectionString);
   c.set("db", db);
+
+  const braintrustLogger = initLogger({
+    projectName: c.env.BRAINTRUST_PROJECT_NAME,
+    apiKey: c.env.BRAINTRUST_API_KEY,
+  });
   await next();
+  c.executionCtx.waitUntil(braintrustLogger.flush());
 });
 
 // =========================================
