@@ -14,6 +14,7 @@ import {
   HealthCheckResponse,
   GnosisClientOptions,
   MemorySearchResult,
+  GnosisAddResult,
 } from "./types";
 
 /**
@@ -390,31 +391,25 @@ export class GnosisApiClient {
   // =========================================
 
   /**
-   * Add a new memory
+   * Add a new memory from messages
    *
    * @example
    * ```typescript
-   * // Add a memory with user messages
+   * // Add a memory for a user from messages
    * const result = await client.addMemory("user123", [
-   *   { role: "user", content: "What is machine learning?" },
-   *   { role: "assistant", content: "Machine learning is a branch of AI..." }
+   *   { role: "user", content: "My favorite color is blue" }
    * ]);
-   *
-   * if (result.success) {
-   *   // Memory added successfully
-   *   console.log(`Added new memory with ID: ${result.data[0].id}`);
-   * }
    * ```
    *
    * @param userId - The user ID to associate with the memory
    * @param messages - The messages to store as a memory
-   * @returns Promise resolving to memory update operations
+   * @returns Promise resolving to the result containing facts, reasoning and memory update operations
    */
   async addMemory(
     userId: string,
     messages: Message[]
-  ): Promise<ApiResponse<MemoryUpdate[]>> {
-    return this.request<MemoryUpdate[]>(`/api/v1/memories`, "POST", {
+  ): Promise<ApiResponse<GnosisAddResult>> {
+    return this.request<GnosisAddResult>(`/api/v1/memories`, "POST", {
       userId,
       messages,
     });

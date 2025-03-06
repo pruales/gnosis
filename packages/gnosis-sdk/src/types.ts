@@ -137,6 +137,41 @@ export type MemoryUpdate =
     };
 
 /**
+ * Fact extracted from messages
+ */
+export interface Fact {
+  /**
+   * The extracted fact text
+   */
+  fact: string;
+
+  /**
+   * Reasoning for the extracted fact
+   */
+  reasoning: string;
+}
+
+/**
+ * Response from the add memory operation
+ */
+export interface GnosisAddResult {
+  /**
+   * Facts extracted from the input messages
+   */
+  facts: Fact[];
+
+  /**
+   * Reasoning for the fact extraction process
+   */
+  reasoning: string;
+
+  /**
+   * Memory updates that were performed
+   */
+  updates: MemoryUpdate[];
+}
+
+/**
  * Request for updating a memory
  */
 export interface UpdateMemoryRequest {
