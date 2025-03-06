@@ -56,8 +56,10 @@ export class Gnosis {
           facts: z.array(
             z.object({
               fact: z.string(),
+              reasoning: z.string(),
             })
           ),
+          reasoning: z.string(),
         }),
         maxTokens: Gnosis.DEFAULT_MAX_TOKENS,
         temperature: Gnosis.DEFAULT_TEMPERATURE,
