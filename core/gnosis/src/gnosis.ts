@@ -13,6 +13,40 @@ import { CoreMessage, generateObject } from "ai";
 import { PromptService } from "./services/prompt";
 import { traced } from "braintrust";
 
+// Define the memory update types
+interface MemoryAddUpdate {
+  type: "ADD";
+  text: string;
+  id: string;
+}
+
+interface MemoryUpdateUpdate {
+  type: "UPDATE";
+  id: string;
+  oldText: string;
+  newText: string;
+}
+
+interface MemoryDeleteUpdate {
+  type: "DELETE";
+  id: string;
+}
+
+type MemoryUpdate = MemoryAddUpdate | MemoryUpdateUpdate | MemoryDeleteUpdate;
+
+// Define the fact type
+interface Fact {
+  fact: string;
+  reasoning: string;
+}
+
+// Define the return type for the add method
+interface GnosisAddResult {
+  facts: Fact[];
+  reasoning: string;
+  updates: MemoryUpdate[];
+}
+
 export class Gnosis {
   private modelFactory: ModelFactory;
   private memory: Memory;
@@ -33,7 +67,11 @@ export class Gnosis {
     this.promptService = promptService;
   }
 
-  async add(userId: string, messages: CoreMessage[], orgId: string) {
+  async add(
+    userId: string,
+    messages: CoreMessage[],
+    orgId: string
+  ): Promise<GnosisAddResult> {
     let factExtractionPrompt: CoreMessage[] = this.factExtractionPrompt;
 
     try {
@@ -83,7 +121,11 @@ export class Gnosis {
 
     if (facts.facts.length === 0) {
       console.log("No facts extracted");
-      return [];
+      return {
+        facts: factsResponse.object.facts,
+        reasoning: factsResponse.object.reasoning,
+        updates: [],
+      };
     }
 
     const newEmbeddings = await this.memory.embed(
@@ -183,7 +225,7 @@ export class Gnosis {
               },
             },
           ]);
-          updates.push({ type: "ADD", text: update.text, id: ids[0] });
+          updates.push({ type: "ADD" as const, text: update.text, id: ids[0] });
           break;
 
         case "UPDATE":
@@ -207,9 +249,9 @@ export class Gnosis {
             },
           ]);
           updates.push({
-            type: "UPDATE",
+            type: "UPDATE" as const,
             id: realUuid,
-            oldText: update.old_memory,
+            oldText: update.old_memory || "",
             newText: update.text,
           });
           break;
@@ -225,14 +267,26 @@ export class Gnosis {
             continue;
           }
           await this.memory.delete([deleteUuid]);
-          updates.push({ type: "DELETE", id: deleteUuid });
+          updates.push({ type: "DELETE" as const, id: deleteUuid });
           break;
+
+        case "NONE":
+          console.warn(`None memory event for ${update.text}`);
+          continue;
+
+        default:
+          console.warn(`Unknown memory event ${update.event}`);
+          continue;
       }
     }
 
     console.log(`processed ${updates.length} updates`);
 
-    return updates;
+    return {
+      facts: factsResponse.object.facts,
+      reasoning: factsResponse.object.reasoning,
+      updates,
+    };
   }
 
   async get(memoryId: string) {

@@ -5,20 +5,23 @@ export const FACT_EXTRACTION_PROMPT: CoreMessage[] = [
     role: "system",
     content: `You are an expert user fact extractor. Your task is to analyze the following conversation and extract only the information that directly relates to the user's life, experiences, or interests. Do not record general facts, background information, or news items unless the user explicitly connects them to their personal context.
 
-For each piece of extracted information, you should output a JSON object with the following structure:
+You must return a JSON object with the following structure:
 
-[
-  {
-    "fact": "<extracted fact>",
-  },
-  {
-    "fact": "<extracted fact2>",
-  }
-]
+{
+  "facts": [
+    {
+      "fact": "<extracted fact>",
+      "reasoning": "<why you extracted this fact>"
+    },
+    {
+      "fact": "<extracted fact2>",
+      "reasoning": "<why you extracted this fact2>"
+    }
+  ],
+  "reasoning": "<overall reasoning about the extraction process>"
+}
 
-All extracted facts should be collected in a JSON list.
-
-Only use the following categories:
+Only use the following categories when extracting facts:
 1. Personal Details
 2. Family
 3. Professional Details
@@ -97,7 +100,11 @@ Guidelines for fact extraction by category:
     - Extract: Any other personal information that doesn't neatly fit into the above categories but is directly tied to the user.
     - Ignore: Random facts or general information that do not have a clear personal link.
 
-  **IMPORTANT**: You must ONLY return a valid JSON object and nothing else. No conversation, no explanations.`,
+For each fact, include a brief reasoning explaining why you extracted it and how it relates to the user personally.
+
+In the top-level "reasoning" field, provide a brief summary of your extraction process, including any notable patterns or observations about the user information you extracted.
+
+**IMPORTANT**: You must ONLY return a valid JSON object and nothing else. No conversation, no explanations.`,
   },
 ];
 
