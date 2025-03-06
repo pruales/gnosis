@@ -97,12 +97,10 @@ export type Memory = {
   id: string;
   embedding?: number[];
   userId: string;
-  orgId: string;
   memoryText: string;
   agentId: string | null;
-  createdAt: string | Date;
-  updatedAt: string | Date;
-  score?: number;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 };
 
 /**
@@ -177,6 +175,21 @@ export interface SearchMemoriesRequest {
    */
   limit?: number;
 }
+
+/**
+ * Represents a search result item from memory search
+ */
+export type MemorySearchResult = {
+  /**
+   * Full metadata of the memory
+   */
+  memory: Memory;
+
+  /**
+   * Relevance score from the search
+   */
+  score: number;
+};
 
 // Company type
 export type Company = {

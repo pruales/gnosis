@@ -34,15 +34,11 @@ export interface MemoryConfig {
 }
 
 export type MemoryMatch = {
-  id: string;
   score: number;
-  metadata: {
-    userId: string;
-    orgId: string;
-    agentId: string | null;
-    memoryText: string;
-    categories: string[] | null;
-  };
+  memory: Pick<
+    schema.Memory,
+    "id" | "userId" | "agentId" | "memoryText" | "categories"
+  >;
 };
 
 export type QueryResult = {
@@ -229,11 +225,10 @@ export class Memory {
 
         return {
           matches: results.map((r) => ({
-            id: r.id,
             score: 1 - Number(r.similarity),
-            metadata: {
+            memory: {
+              id: r.id,
               userId: r.userId,
-              orgId: r.orgId,
               agentId: r.agentId,
               memoryText: r.memoryText,
               categories: r.categories,

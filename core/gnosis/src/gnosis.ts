@@ -107,8 +107,8 @@ export class Gnosis {
         },
       });
       for (const match of queryResult.matches) {
-        if (!seenIds.has(match.id)) {
-          seenIds.add(match.id);
+        if (!seenIds.has(match.memory.id)) {
+          seenIds.add(match.memory.id);
           similarMemories.push(match);
         }
       }
@@ -119,10 +119,10 @@ export class Gnosis {
     const uuidMapping = new Map<string, string>();
     const oldMemories = similarMemories.map((m, index) => {
       const indexStr = index.toString();
-      uuidMapping.set(indexStr, m.id);
+      uuidMapping.set(indexStr, m.memory.id);
       return {
         id: indexStr,
-        text: m.metadata.memoryText,
+        text: m.memory.memoryText,
       };
     });
 
@@ -258,6 +258,7 @@ export class Gnosis {
   ) {
     const queryOptions: QueryOptions = {
       text: query,
+      limit: limit,
       filters: {
         userId: userId,
         orgId: orgId,
@@ -268,9 +269,7 @@ export class Gnosis {
     if (!results?.matches) return [];
 
     return results.matches.map((m) => ({
-      id: m.id,
-      text: m.metadata.memoryText,
-      metadata: m.metadata,
+      memory: m.memory,
       score: m.score,
     }));
   }

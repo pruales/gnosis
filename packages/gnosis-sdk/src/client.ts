@@ -13,6 +13,7 @@ import {
   MemoryOperationResponse,
   HealthCheckResponse,
   GnosisClientOptions,
+  MemorySearchResult,
 } from "./types";
 
 /**
@@ -514,33 +515,40 @@ export class GnosisApiClient {
   }
 
   /**
-   * Search memories based on query text
+   * Search memories by query text
    *
    * @example
    * ```typescript
-   * // Search for memories containing specific text
-   * const result = await client.searchMemories("machine learning", "user_123");
+   * // Search memories for a specific user
+   * const result = await client.searchMemories("project planning", "user_123");
    *
    * if (result.success) {
-   *   console.log(`Found ${result.data.length} matching memories`);
+   *   // Process search results
+   *   result.data.forEach(memory => {
+   *     console.log(`${memory.id}: ${memory.text} (Score: ${memory.score})`);
+   *   });
    * }
    * ```
    *
-   * @param query - Search query text
+   * @param query - Text to search for
    * @param userId - User ID to filter memories by
    * @param limit - Maximum number of results to return (default: 100)
-   * @returns Promise resolving to matching memories
+   * @returns Promise resolving to array of matching memories
    */
   async searchMemories(
     query: string,
     userId: string,
     limit: number = 100
-  ): Promise<ApiResponse<Memory[]>> {
-    return this.request<Memory[]>(`/api/v1/memories/search`, "POST", {
-      query,
-      userId,
-      limit,
-    });
+  ): Promise<ApiResponse<MemorySearchResult[]>> {
+    return this.request<MemorySearchResult[]>(
+      `/api/v1/memories/search`,
+      "POST",
+      {
+        query,
+        userId,
+        limit,
+      }
+    );
   }
 
   /**
