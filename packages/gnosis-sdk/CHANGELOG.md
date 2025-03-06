@@ -1,5 +1,11 @@
 # @gnosis.dev/sdk
 
+## 1.2.2
+
+### Patch Changes
+
+- d8ba4e8: reasoning now including in add operations
+
 ## 1.2.1
 
 ### Patch Changes
