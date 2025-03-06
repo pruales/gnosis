@@ -69,6 +69,8 @@ export class Gnosis {
           factsExtracted: response.object.facts,
           userId,
           orgId,
+          inputSystem: system,
+          inputMessages: messages,
         },
       });
       return response;
@@ -152,6 +154,8 @@ export class Gnosis {
           memoryUpdates: response.object.memory,
           userId,
           orgId,
+          inputSystem: messages[0].content,
+          inputMessage: messages[1].content,
         },
       });
       return response;
