@@ -47,7 +47,8 @@ export class Gnosis {
     // 1. Extract facts using LLM with properly formatted messages
     const factsResponse = await generateObject({
       model: this.modelFactory.getModel(),
-      messages: [...factExtractionPrompt, ...messages],
+      system: factExtractionPrompt[0].content as string,
+      messages: [...messages],
       schema: z.object({
         facts: z.array(
           z.object({
